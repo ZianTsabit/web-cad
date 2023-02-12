@@ -1,6 +1,40 @@
 /// <reference path="utils.js" />
 
-function drawLine() {
+class Line {
+
+    constructor(x1, y1, x2, y2) {
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+        this.colorHex = "#000000";
+        this.vertices = this.makeVertices();
+    }
+
+    makeVertices() {
+        
+        let vertices = [
+            this.x1, this.y1,
+            this.x2, this.y2
+        ];
+        
+        return vertices;
+    }
+
+    changeColor(newcolorHex) {
+        this.colorHex = newcolorHex;
+    }
+
+
+    draw() {
+
+        drawLine(this.vertices, this.colorHex);
+
+    }
+
+}
+
+function drawLine(vertices, colorHex) {
 
     const canvas = document.getElementById('webgl-canvas');
 
@@ -11,19 +45,8 @@ function drawLine() {
         return;
     }
 
-    // Vertex shader program
-    
-    var vertices = [ 
-        1.0, 1.0, 0.0, 
-        0.0, 0.0, 0.0,
-        -1.0, -1.0, 0.0,
-        0.0, 0.0, 0.0, 
-    ];
-
-    var vertex_buffer = gl.createBuffer();
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-
+    var vbuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -74,6 +97,7 @@ function drawLine() {
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     console.log(canvas.width, canvas.height);
-    gl.drawArrays(gl.LINES, 0, 2);
+    
+    gl.drawArrays(gl.LINES, 0, vertices.length / 2);
 
 }
