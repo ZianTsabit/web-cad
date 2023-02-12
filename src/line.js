@@ -1,6 +1,8 @@
-function main() {
+/// <reference path="utils.js" />
 
-    const canvas = document.getElementById('myCanvas');
+function drawLine() {
+
+    const canvas = document.getElementById('webgl-canvas');
 
     const gl = canvas.getContext('webgl');
 

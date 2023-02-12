@@ -12,18 +12,54 @@
     <div class="container">
         <div class="left-menu">
             <h1>2D Web Based CAD</h1>
+            <input type="radio" name="shape" value="line" checked>Garis<br>
+            <input type="radio" name="shape" value="square">Persegi<br>
+            <input type="radio" name="shape" value="rectangle">Persegi Panjang<br>
+            <input type="radio" name="shape" value="polygon">Polygon<br>
         </div>
         
-        <div class="canvas-container" onclick="main();">
-          <canvas id="myCanvas" width="900" height="900" >
+        <div class="canvas-container">
+          <canvas id="webgl-canvas" width="900" height="900" style="border: 1px solid black;" >
             Your browser does not support the HTML5 canvas tag.
           </canvas>
-          <script src="line.js"></script>
         </div>
         
         <div class="right-menu">
           
         </div>
+
+        <script src="utils.js"></script>
+        <script src="line.js"></script>
+        <script src="square.js"></script>
+
+        <script>
+          /// <reference path="utils.js" />
+          /// <reference path="line.js" />
+          /// <reference path="square.js" />
+
+          window.onload = (e) => {
+            const canvas = document.getElementById('webgl-canvas');
+            canvas.addEventListener('click', (e) => {
+              let modeChecked;
+              const radios = document.getElementsByName("shape");
+              for (let i = 0; i < radios.length; i++) {
+                if (radios[i].checked) {
+                  modeChecked = radios[i];
+                  break;
+                }
+              }
+
+              switch (modeChecked.value) {
+                case "line":
+                  drawLine(e);
+                  break;
+                case "square":
+                  drawSquare(e);
+                  break;
+              }
+            })
+          }
+        </script>
     </div>
     
 </body>
