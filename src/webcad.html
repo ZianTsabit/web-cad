@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCAD</title>
+</head>
+<body>
+    <div>
+        <h1>2D Web Based CAD</h1>
+        <input type="radio" name="shape" value="cursor" checked onclick="onModeChange(event)">Cursor<br>
+        <input type="radio" name="shape" value="square" onclick="onModeChange(event)">Persegi<br>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <canvas id="myCanvas" width="500px" height="500px" style="border: 1px solid black; position: absolute; z-index: 6;" onclick="console.log('myCanvas hit');"></canvas>
+        <canvas id="hitCanvas" width="500px" height="500px" style="border: 1px solid black; position: absolute; z-index: 5;" onclick="console.log('hitCanvas hit');"></canvas>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="webcad.js"></script>
+    <script>
+        let webcad = null;
+
+        function onModeChange(e){
+            console.log(e);
+        }
+
+        window.onload = function() {
+            webcad = new Webcad(document.getElementById("myCanvas"), document.getElementById("hitCanvas"));
+            const square = new Square(1, webcad);
+            square.setPosition(100, 100);
+            square.setWidth(50);
+            webcad.addObject(square);
+
+            const square2 = new Square(2, webcad);
+            square2.setPosition(300, 100);
+            square2.setWidth(100);
+            webcad.addObject(square2);
+        }
+    </script>
+</body>
+</html>
