@@ -1,11 +1,44 @@
 /// <reference path="utils.js" />
 
+/**
+ * 
+ * @param {MouseEvent} e 
+ */
+function onModeChange(e) {
+    switch (e.target.value) {
+        case "cursor":
+            webcad.canvas.onclick = (e) => {
+                const glMousePos = {
+                    x: e.clientX - webcad.canvas.offsetLeft,
+                    y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
+                };
+                let pixels = new Uint8Array(4);
+                webcad.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, webcad.hitGl.RGBA, webcad.hitGl.UNSIGNED_BYTE, pixels);
+
+                webcad.selectedObjectId = pixels[2];
+                webcad.render();
+            }
+            break;
+        case "square":
+            webcad.canvas.onclick = (e) => {
+                const square = new Square(webcad.lastId++, webcad);
+                square.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
+                square.setWidth(150);
+                webcad.addObject(square);
+            }
+            break;
+    }
+}
+
 class Webcad {
+    /** @type {number} */
+    lastId = 1;
+
     /**@type {Shape[]} */
     objects = [];
 
-    /**@type {Shape} */
-    selectedObject = null;
+    /**@type {number} */
+    selectedObjectId = null;
 
     /**@type {boolean} */
     isDrawing = false;
@@ -14,14 +47,15 @@ class Webcad {
     canvas;
     /** @type {WebGLRenderingContext} */
     gl;
+    vBuffer;
+    cBuffer;
 
     /**@type {HTMLCanvasElement} */
     hitCanvas;
     /**@type {WebGLRenderingContext} */
-    hitContext;
-
-    vBuffer;
-    cBuffer;
+    hitGl;
+    hvBuffer;
+    hcBuffer;
 
     /**
      * 
@@ -33,8 +67,9 @@ class Webcad {
         this.gl = canvas.getContext('webgl');
 
         this.hitCanvas = hitCanvas;
-        this.hitContext = hitCanvas.getContext('webgl', { preserveDrawingBuffer: true });
+        this.hitGl = hitCanvas.getContext('webgl', { preserveDrawingBuffer: true });
 
+        // Front Canvas
         this.gl.viewport(0, 0, canvas.width, canvas.height);
         this.gl.clearColor(1, 1, 1, 1);
         
@@ -61,12 +96,47 @@ class Webcad {
 
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-        canvas.addEventListener('mousedown', (e) => {
-            const square = new Square(this.objects[this.objects.length-1].id + 1, this);
-            square.setPosition(e.clientX-canvas.offsetLeft, canvas.height - (e.clientY-canvas.offsetTop));
-            square.setWidth(150);
-            this.addObject(square);
-        });
+        // Hit Canvas
+        this.hitGl.viewport(0, 0, canvas.width, canvas.height);
+        this.hitGl.clearColor(0, 0, 0, 1);
+        
+        let hitProgram = initShader(this.hitGl, vertexShaderSrc, fragmentShaderSrc);
+        if(!hitProgram) {
+            alert("Shader program loading failed!");
+        }
+
+        this.hitGl.useProgram(hitProgram);
+
+        this.hvBuffer = this.hitGl.createBuffer();
+        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hvBuffer);
+
+        let hvPosition = this.hitGl.getAttribLocation(hitProgram, "vPosition");
+        this.hitGl.vertexAttribPointer(hvPosition, 2, this.hitGl.FLOAT, false, 0, 0);
+        this.hitGl.enableVertexAttribArray(hvPosition);
+
+        this.hcBuffer = this.hitGl.createBuffer();
+        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hcBuffer);
+
+        let hvColor = this.hitGl.getAttribLocation(hitProgram, "vColor");
+        this.hitGl.vertexAttribPointer(hvColor, 4, this.hitGl.FLOAT, false, 0, 0);
+        this.hitGl.enableVertexAttribArray(hvColor);
+
+        this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
+
+        // On mousedown
+        // canvas.addEventListener('mousedown', (e) => {
+        //     // const square = new Square(this.objects[this.objects.length-1].id + 1, this);
+        //     // square.setPosition(e.clientX-canvas.offsetLeft, canvas.height - (e.clientY-canvas.offsetTop));
+        //     // square.setWidth(150);
+        //     // this.addObject(square);
+        //     const glMousePos = {
+        //         x: e.clientX - canvas.offsetLeft,
+        //         y: canvas.height - (e.clientY - canvas.offsetTop)
+        //     };
+        //     let pixels = new Uint8Array(4);
+        //     this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
+        //     console.log(pixels);
+        // });
     }
 
     render() {
@@ -74,6 +144,7 @@ class Webcad {
         let renderList = [];
         let vertices = [];
         let colors = [];
+        let hitColors = [];
 
         this.objects.forEach((object) => {
             let objectVertices = object.getVertices();
@@ -90,23 +161,38 @@ class Webcad {
                 vertices.push(x);
             });
             for (let i = 0; i < re.count; i++) {
-                colors.push(1, 1, 0, 1);
+                if (this.selectedObjectId == re.id) {
+                    colors.push(1, 0, 0, 1);
+                } else {
+                    colors.push(1, 1, 0, 1);
+                }
+                hitColors.push(0, 0, re.id * 1.0/255, 1);
             }
         });
 
+        // Front canvas
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(vertices), this.gl.STATIC_DRAW);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(colors), this.gl.STATIC_DRAW);
 
+        // Hit canvas
+        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hvBuffer);
+        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(vertices), this.hitGl.STATIC_DRAW);
+
+        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hcBuffer);
+        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(hitColors), this.hitGl.STATIC_DRAW);;
+
         // console.log(vertices);
         // console.log(colors);
 
         requestAnimationFrame(() => {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
             renderList.forEach((re) => {
                 this.gl.drawArrays(re.mode, re.index, re.count);
+                this.hitGl.drawArrays(re.mode, re.index, re.count);
             });
         });
     }
