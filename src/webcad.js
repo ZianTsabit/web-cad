@@ -1,35 +1,5 @@
 /// <reference path="utils.js" />
 
-/**
- * 
- * @param {MouseEvent} e 
- */
-function onModeChange(e) {
-    switch (e.target.value) {
-        case "cursor":
-            webcad.canvas.onclick = (e) => {
-                const glMousePos = {
-                    x: e.clientX - webcad.canvas.offsetLeft,
-                    y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
-                };
-                let pixels = new Uint8Array(4);
-                webcad.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, webcad.hitGl.RGBA, webcad.hitGl.UNSIGNED_BYTE, pixels);
-
-                webcad.selectedObjectId = pixels[2];
-                webcad.render();
-            }
-            break;
-        case "square":
-            webcad.canvas.onclick = (e) => {
-                const square = new Square(webcad.lastId++, webcad);
-                square.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
-                square.setWidth(150);
-                webcad.addObject(square);
-            }
-            break;
-    }
-}
-
 class Webcad {
     /** @type {number} */
     lastId = 1;
@@ -122,21 +92,6 @@ class Webcad {
         this.hitGl.enableVertexAttribArray(hvColor);
 
         this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
-
-        // On mousedown
-        // canvas.addEventListener('mousedown', (e) => {
-        //     // const square = new Square(this.objects[this.objects.length-1].id + 1, this);
-        //     // square.setPosition(e.clientX-canvas.offsetLeft, canvas.height - (e.clientY-canvas.offsetTop));
-        //     // square.setWidth(150);
-        //     // this.addObject(square);
-        //     const glMousePos = {
-        //         x: e.clientX - canvas.offsetLeft,
-        //         y: canvas.height - (e.clientY - canvas.offsetTop)
-        //     };
-        //     let pixels = new Uint8Array(4);
-        //     this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
-        //     console.log(pixels);
-        // });
     }
 
     render() {
@@ -197,6 +152,34 @@ class Webcad {
         });
     }
 
+    setMode(mode) {
+        /** @type {typeof Shape} */
+        let shapeType = shapeTypes[mode];
+        switch (mode) {
+            case "cursor":
+                this.canvas.onclick = (e) => {
+                    const glMousePos = {
+                        x: e.clientX - this.canvas.offsetLeft,
+                        y: this.canvas.height - (e.clientY - this.canvas.offsetTop)
+                    };
+                    let pixels = new Uint8Array(4);
+                    this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
+
+                    this.selectedObjectId = pixels[2];
+                    this.render();
+                }
+                this.canvas.onmousedown = undefined;
+                this.canvas.onmousemove = undefined;
+                this.canvas.onmouseup = undefined;
+                break;
+                
+            default:
+                this.canvas.onclick = undefined;
+                this.canvas.onmousedown = (e) => shapeType.onMouseDown(e, this);
+                break;
+        }
+    }
+
     addObject(object) {
         this.objects.push(object);
 
@@ -240,9 +223,10 @@ class Shape {
 
     /**
      * On mouse down
-     * @param {MouseEvent} e 
+     * @param {MouseEvent} e
+     * @param {Webcad} webcad
      */
-    onMouseDown(e) {
+    static onMouseDown(e, webcad) {
         console.log('Not yet implemented, override it!');
     }
 
@@ -250,7 +234,7 @@ class Shape {
      * When object is selected and mouse is moving
      * @param {MouseEvent} e 
      */
-    onMouseMove(e) {
+    static onMouseMove(e) {
         console.log('Not yet implemented, override it!');
     }
 
@@ -258,7 +242,7 @@ class Shape {
      * When object is selected and mouse is up
      * @param {MouseEvent} e 
      */
-    onMouseUp(e) {
+    static onMouseUp(e) {
         console.log('Not yet implemented, override it!');
     }
 }
@@ -332,6 +316,43 @@ class Square extends Shape {
     getDrawingMode() {
         return this.webcad.gl.TRIANGLE_STRIP;
     }
+
+    /**
+     * On mouse down
+     * @param {MouseEvent} e
+     * @param {Webcad} webcad
+     */
+    static onMouseDown(e, webcad) {
+        const square = new Square(webcad.lastId++, webcad);
+        square.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
+        square.setWidth(0);
+
+        webcad.addObject(square);
+        let initialPos = {
+            x: square.position.x,
+            y: square.position.y
+        }
+
+        webcad.canvas.onmousemove = (e) => {
+            const cursPos = {
+                x: e.clientX - webcad.canvas.offsetLeft,
+                y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
+            };
+            const leftModifier = cursPos.x > initialPos.x ? 1 : -1;
+            const topModifier = cursPos.y > initialPos.y ? 1 : -1;
+            
+            const finalWidth = Math.max(Math.abs(cursPos.x - initialPos.x), Math.abs(cursPos.y - initialPos.y));
+            
+            square.setWidth(finalWidth);
+            square.setPosition(initialPos.x + finalWidth/2 * leftModifier, initialPos.y + finalWidth/2 * topModifier);
+
+            webcad.render();
+        };
+
+        webcad.canvas.onmouseup = (e) => {
+            webcad.canvas.onmousemove = undefined;
+        };
+    }
 }
 
 const vertexShaderSrc = `
@@ -356,3 +377,7 @@ void main() {
     gl_FragColor = fColor;
 }
 `
+
+const shapeTypes = {
+    "square": Square
+}
