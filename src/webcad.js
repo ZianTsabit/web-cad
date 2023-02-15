@@ -2,6 +2,8 @@
 /// <reference path="shape.js" />
 /// <reference path="square.js" />
 
+const VERTEX_SELECTION_TOLERANCE = 7.5;
+
 const shapeTypes = {
     "square": Square
 }
@@ -52,38 +54,88 @@ class Webcad {
         /** @type {typeof Shape} */
         let shapeType = shapeTypes[mode];
 
-        /** @type {{label, type, onValueChange}[]} */
+        /** @type {{label, type, onValueChange, default}[]} */
         let createAttrs;
         switch (mode) {
             case "cursor":
-                this.canvas.onclick = (e) => {
-                    const glMousePos = {
-                        x: e.clientX - this.canvas.offsetLeft,
-                        y: this.canvas.height - (e.clientY - this.canvas.offsetTop)
-                    };
-                    let pixels = new Uint8Array(4);
-                    this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
+                this.rightSidebar.innerHTML = "";
 
-                    this.selectedObjectId = pixels[2];
-                    this.render();
-                }
                 this.canvas.style.cursor = "default";
                 this.canvas.onmousedown = undefined;
                 this.canvas.onmousemove = undefined;
                 this.canvas.onmouseup = undefined;
 
-                this.rightSidebar.innerHTML = "";
+                this.canvas.onmousedown = (e) => {
+                    let prevMousePos = { x: e.clientX - this.canvas.offsetLeft, y: this.canvas.height - (e.clientY - this.canvas.offsetTop) };
+
+                    const pixels = this.readHitPixel(e.clientX, e.clientY);
+                    this.selectedObjectId = pixels[2];
+                    this.render();
+                    
+                    const obj = this.getObjectById(this.selectedObjectId);
+                    if (!obj) {
+                        this.canvas.onmousemove = undefined;
+                        this.canvas.onmouseup = undefined;
+                        return;
+                    };
+                    
+                    this.rightSidebar.innerHTML = "";
+                    if (pixels[0] == 0) {    // 0: translasi
+                        this.canvas.onmousemove = (e) => {
+                            const currMousePos = {
+                                x: e.clientX - this.canvas.offsetLeft,
+                                y: this.canvas.height - (e.clientY - this.canvas.offsetTop)
+                            };
+                            
+                            obj.translate(currMousePos.x - prevMousePos.x, currMousePos.y - prevMousePos.y);
+                            this.render();
+
+                            prevMousePos = currMousePos;
+                        } 
+                    } else if (pixels[0] == 1) {    // 1: geser titik sudut
+                        let attrs = obj.getVertexSidebarAttrs(prevMousePos.x, prevMousePos.y, VERTEX_SELECTION_TOLERANCE);
+                        this.setSidebarAttrs(attrs);
+                        this.render();
+
+                        this.canvas.onmousemove = (e) => {
+                            const currMousePos = {
+                                x: e.clientX - this.canvas.offsetLeft,
+                                y: this.canvas.height - (e.clientY - this.canvas.offsetTop)
+                            };
+    
+                            obj.moveVertex(prevMousePos.x, prevMousePos.y, VERTEX_SELECTION_TOLERANCE*2, currMousePos.x - prevMousePos.x, currMousePos.y - prevMousePos.y);
+                            this.render();
+
+                            prevMousePos = currMousePos;
+                        }
+                    }
+
+                    this.canvas.onmouseup = (e) => {
+                        this.canvas.style.cursor = "default";
+                        this.canvas.onmousemove = (e) => {
+                            const pixels = this.readHitPixel(e.clientX, e.clientY);
+                            if (pixels[0] == 1) {
+                                this.canvas.style.cursor = "pointer";
+                            } else {
+                                this.canvas.style.cursor = "default";
+                            }
+                        };
+
+                        this.render();
+                    }
+                };
+
                 break;
                 
             default:
                 this.selectedObjectId = null
 
                 this.canvas.onclick = undefined;
-                this.canvas.onmousedown = (e) => shapeType.onMouseDown(e, this);
+                this.canvas.onmousedown = (e) => shapeType.onCreate(e, this);
                 this.canvas.style.cursor = "crosshair";
 
-                createAttrs = shapeType.getCreateAttrs()
-                this.setSidebarAttrs(createAttrs)
+                createAttrs = shapeType.getCreateAttrs();
+                this.setSidebarAttrs(createAttrs);
 
                 this.render();
                 break;
@@ -98,7 +150,7 @@ class Webcad {
 
     /**
      * 
-     * @param {{label, type, onValueChange}[]} createAttrs 
+     * @param {{label, type, onValueChange, default}[]} createAttrs 
      */
     setSidebarAttrs(createAttrs) {
         createAttrs.forEach((attr) => {
@@ -110,7 +162,13 @@ class Webcad {
                 case "color":
                     let input = document.createElement("input");
                     input.setAttribute("type", "color");
-                    input.onchange = (e) => attr.onValueChange(e);
+                    input.onchange = (e) => {
+                        attr.onValueChange(e);
+                        this.render();
+                    }
+
+                    if (attr.default) { input.value = attr.default };
+
                     this.rightSidebar.appendChild(input);
                     this.rightSidebar.appendChild(document.createElement("br"));
                     break;
@@ -123,6 +181,9 @@ class Webcad {
         let renderList = [];
         let vertices = [];
         let colors = [];
+
+        let hitRenderList = [];
+        let hitVertices = [];
         let hitColors = [];
 
         this.objects.forEach((object) => {
@@ -137,10 +198,13 @@ class Webcad {
                 mode: object.getDrawingMode()
             };
             renderList.push(re);
+            hitRenderList.push(re);
 
             objectVertices.forEach((x) => {
+                hitVertices.push(x);
                 vertices.push(x);
             });
+
             objectVerticesColors.forEach((x) => {
                 colors.push(x);
             });
@@ -149,8 +213,13 @@ class Webcad {
             }
             // End of each object add to render list
 
-            // Selected object boundary drawing
+            // Selected object: vertices selector and boundary drawing
             if (this.selectedObjectId == re.id) {
+                for (let i = 0; i < objectVertices.length; i +=2) {
+                    let obv = objectVertices;
+                    this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
+                }
+
                 let leftMost = objectVertices[0];
                 let rightMost = objectVertices[0];
                 let topMost = objectVertices[1];
@@ -178,14 +247,13 @@ class Webcad {
                 }
                 renderList.push(re)
 
-                let offset = 10 / this.canvas.width;
+                let offset = 15 / this.canvas.width;
                 vertices.push(leftMost-offset, topMost+offset, leftMost+2*offset, topMost+offset, leftMost-offset, topMost+offset, leftMost-offset, topMost-2*offset)
                 vertices.push(rightMost+offset, topMost+offset, rightMost-2*offset, topMost+offset, rightMost+offset, topMost+offset, rightMost+offset, topMost-2*offset)
                 vertices.push(leftMost-offset, bottomMost-offset, leftMost+2*offset, bottomMost-offset, leftMost-offset, bottomMost-offset, leftMost-offset, bottomMost+2*offset)
                 vertices.push(rightMost+offset, bottomMost-offset, rightMost-2*offset, bottomMost-offset, rightMost+offset, bottomMost-offset, rightMost+offset, bottomMost+2*offset)
                 for (let i = 0; i < re.count; i++) {
                     colors.push(0, 0, 0, 1)
-                    hitColors.push(0, 0, 0, 1)
                 }
             }
             // End of selected object boundary drawing
@@ -209,8 +277,12 @@ class Webcad {
         requestAnimationFrame(() => {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
             this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
+
             renderList.forEach((re) => {
                 this.gl.drawArrays(re.mode, re.index, re.count);
+            });
+
+            hitRenderList.forEach((re) => {
                 this.hitGl.drawArrays(re.mode, re.index, re.count);
             });
         });
@@ -281,6 +353,69 @@ class Webcad {
         this.hitGl.enableVertexAttribArray(hvColor);
 
         this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
+    }
+
+    /**
+     * 
+     * @param {number} vertexX 
+     * @param {number} vertexY 
+     * @param {number} size 
+     * @param {number[]} hitColor
+     * @param {number[]} vertices 
+     * @param {number[]} colors 
+     * @param {number[]} hitVertices 
+     * @param {number[]} hitColors
+     * @param {any[]} renderList
+     * @param {any[]} hitRenderList
+     */
+    drawVerticesIndicator(vertexX, vertexY, hitColor, size, vertices, colors, hitVertices, hitColors, renderList, hitRenderList) {
+        let re = {
+            id: 0,
+            index: vertices.length/2,
+            count: 4,
+            mode: this.gl.TRIANGLE_STRIP
+        }
+        renderList.push(re);
+        hitRenderList.push(re);
+
+        const points = [vertexX-size/2, vertexY+size/2, vertexX+size/2, vertexY+size/2, vertexX-size/2, vertexY-size/2, vertexX+size/2, vertexY-size/2];
+        vertices.push(...points);
+        hitVertices.push(...points);
+        for (let i = 0; i < 4; i++) {
+            colors.push(75/255, 75/255, 75/255, 255);
+            hitColors.push(...hitColor);
+        }
+    }
+
+    /**
+     * Get an object by its id
+     * @param {number} id 
+     * @returns {Shape | null}
+     */
+    getObjectById(id) {
+        for (let i = 0; i < this.objects.length; i++) {
+            if (this.objects[i].id == id) {
+                return this.objects[i];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 
+     * @param {number} clientX 
+     * @param {number} clientY 
+     * @returns {Uint8Array}
+     */
+    readHitPixel(clientX, clientY) {
+        const glMousePos = {
+            x: clientX - this.canvas.offsetLeft,
+            y: this.canvas.height - (clientY - this.canvas.offsetTop)
+        };
+        let pixels = new Uint8Array(4);
+        this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
+
+        return pixels;
     }
 }
 

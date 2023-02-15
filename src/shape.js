@@ -20,6 +20,14 @@ class Shape {
         this.webcad = webcad;
     }
 
+    translate(diffX, diffY) {
+        console.log('Not yet implemented, override it!');
+    }
+
+    moveVertex(pointX, pointY, tolerance, diffX, diffY){
+        console.log('Not yet implemented, override it!');
+    }
+
     /**
      * @returns {Float32Array}
      */
@@ -42,34 +50,39 @@ class Shape {
     }
 
     /**
-     * @returns {{label, type, onValueChange}[]}
+     * Returs list of what you can do to this shape
+     * @returns {{label, type, onValueChange, default}[]}
+     */
+    getSidebarAttrs() {
+        console.log('Not yet implemented, override it!');
+    }
+
+    /**
+     * Return list of what you can do to vertices in this shape (color, etc.)
+     * @param {number} poinX Selected vertex's x coordinate
+     * @param {number} poinY Selected vertex's y coordinate
+     * @param {number} tolerance Vertex selection tolerance
+     * @returns {{label, type, onValueChange, default}[]}
+     */
+    getVertexSidebarAttrs(poinX, poinY, tolerance) {
+        console.log('Not yet implemented, override it!');
+    }
+
+
+    /**
+     * Return list of attributes on sidebar when creating
+     * @returns {{label, type, onValueChange, default}[]}
      */
     static getCreateAttrs() {
         console.log('Not yet implemented, override it!');
     }
 
     /**
-     * On mouse down
+     * Shape creating process
      * @param {MouseEvent} e
      * @param {Webcad} webcad
      */
-    static onMouseDown(e, webcad) {
-        console.log('Not yet implemented, override it!');
-    }
-
-    /**
-     * When object is selected and mouse is moving
-     * @param {MouseEvent} e 
-     */
-    static onMouseMove(e) {
-        console.log('Not yet implemented, override it!');
-    }
-
-    /**
-     * When object is selected and mouse is up
-     * @param {MouseEvent} e 
-     */
-    static onMouseUp(e) {
+    static onCreate(e, webcad) {
         console.log('Not yet implemented, override it!');
     }
 }
@@ -146,12 +159,15 @@ class Square extends Shape {
         this.recalculateVertices();
     }
 
-
     setAllVertexColor(hex) {
         const colorArr = hexToRgb(hex);
         for(let i = 0; i < 4; i++) {
             this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
         }
+    }
+
+    translate(diffX, diffY) {
+        this.setPosition(this.position.x + diffX, this.position.y + diffY);
     }
 
     getVertices() {
@@ -173,13 +189,59 @@ class Square extends Shape {
         return this.webcad.gl.TRIANGLE_STRIP;
     }
 
+    moveVertex(pointX, pointY, tolerance, diffX, diffY){
+        let selectedVertexIdx = this.getVertexIdx(pointX, pointY, tolerance);
+
+        if (selectedVertexIdx == null) {
+            return;
+        }
+
+        let xModifier = 1;
+        let yModifier = 1;
+        switch (selectedVertexIdx) {
+            case 0:
+                xModifier = -1;
+                break;
+            case 2:
+                xModifier = -1;
+                yModifier = -1;
+                break;
+            case 3:
+                yModifier = -1;
+                break;
+        }
+        let finalDiff = (diffX*xModifier + diffY*yModifier)/2;
+        this.setWidth(this.width + finalDiff);
+        this.setPosition(this.position.x + xModifier*finalDiff/2, this.position.y + yModifier*finalDiff/2);
+    }
+
+    /**
+     * Return list of what you can do to vertices in this shape (color, etc.)
+     * @returns {{label, type, onValueChange, default}[]}
+     */
+    getVertexSidebarAttrs(poinX, poinY, tolerance) {
+        return [{
+            label: "Vertex Color: ",
+            type: "color",
+            onValueChange: (e) => {
+                let i = this.getVertexIdx(poinX, poinY, tolerance);
+                if (i == null) return;
+
+                const colorArr = hexToRgb(e.target.value);
+                this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
+            }
+        }];
+    }
+
     /**
      * @returns {{label, type, onValueChange}[]}
      */
     static getCreateAttrs() {
-        return [
-            { label: "Square Color: ", type: "color", onValueChange: (e) => { Square.setDefaultColor(e.target.value) } }
-        ]
+        return [{   label: "Square Color: ",
+                type: "color",
+                onValueChange: (e) => { Square.setDefaultColor(e.target.value) },
+                default: Square.defaultColor
+        }];
     }
     
     /**
@@ -191,11 +253,11 @@ class Square extends Shape {
     }
 
     /**
-     * On mouse down
+     * When creating a new shape
      * @param {MouseEvent} e
      * @param {Webcad} webcad
      */
-    static onMouseDown(e, webcad) {
+    static onCreate(e, webcad) {
         const square = new Square(webcad.lastId++, webcad);
         square.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
         square.setWidth(0);
@@ -225,5 +287,22 @@ class Square extends Shape {
         webcad.canvas.onmouseup = (e) => {
             webcad.canvas.onmousemove = undefined;
         };
+    }
+
+    /**
+     * 
+     * @param {number} pointX
+     * @param {number} pointY
+     * @param {number} tolerance
+     * @returns {number | null}
+     */
+    getVertexIdx(pointX, pointY, tolerance) {
+        for (let i = 0; i < this.vertices.length; i++) {
+            const point = this.vertices[i];
+            if (Math.abs(point[0] - pointX) <= tolerance && Math.abs(point[1] - pointY) <= tolerance) {
+                return i;
+            }
+        }
+        return null;
     }
 }

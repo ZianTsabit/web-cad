@@ -27,15 +27,15 @@
     <script>
         window.onload = function() {
             webcad = new Webcad(document.getElementById("myCanvas"), document.getElementById("hitCanvas"), document.getElementById("right-sidebar"));
-            const square = new Square(webcad.lastId++, webcad);
-            square.setPosition(100, 100);
-            square.setWidth(50);
-            webcad.addObject(square);
+            // const square = new Square(webcad.lastId++, webcad);
+            // square.setPosition(100, 100);
+            // square.setWidth(50);
+            // webcad.addObject(square);
 
-            const square2 = new Square(webcad.lastId++, webcad);
-            square2.setPosition(300, 100);
-            square2.setWidth(100);
-            webcad.addObject(square2);
+            // const square2 = new Square(webcad.lastId++, webcad);
+            // square2.setPosition(300, 100);
+            // square2.setWidth(100);
+            // webcad.addObject(square2);
 
             onModeChange({ target: {value: "cursor"} });
         }
