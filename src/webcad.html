@@ -13,16 +13,20 @@
         <input type="radio" name="shape" value="square" onclick="onModeChange(event)">Persegi<br>
     </div>
 
+    <div id="right-sidebar">
+    </div>
+
     <div style="margin-top: 30px;">
         <canvas id="myCanvas" width="500px" height="500px" style="border: 1px solid black; position: absolute; z-index: 6;"></canvas>
         <canvas id="hitCanvas" width="500px" height="500px" style="border: 1px solid black; position: absolute; z-index: 5;"></canvas>
     </div>
 
     <script src="utils.js"></script>
+    <script src="shape.js"></script>
     <script src="webcad.js"></script>
     <script>
         window.onload = function() {
-            webcad = new Webcad(document.getElementById("myCanvas"), document.getElementById("hitCanvas"));
+            webcad = new Webcad(document.getElementById("myCanvas"), document.getElementById("hitCanvas"), document.getElementById("right-sidebar"));
             const square = new Square(webcad.lastId++, webcad);
             square.setPosition(100, 100);
             square.setWidth(50);

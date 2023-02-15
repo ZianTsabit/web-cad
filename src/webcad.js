@@ -1,4 +1,10 @@
 /// <reference path="utils.js" />
+/// <reference path="shape.js" />
+/// <reference path="square.js" />
+
+const shapeTypes = {
+    "square": Square
+}
 
 class Webcad {
     /** @type {number} */
@@ -27,12 +33,195 @@ class Webcad {
     hvBuffer;
     hcBuffer;
 
+    /** @type {HTMLDivElement} */
+    rightSidebar;
+
+    /**
+     * 
+     * @param {HTMLCanvasElement} canvas 
+     * @param {HTMLCanvasElement} hitCanvas
+     * @param {HTMLDivElement} rightSidebar
+     */
+    constructor(canvas, hitCanvas, rightSidebar) {
+        this.rightSidebar = rightSidebar;
+
+        this.initializeWebGL(canvas, hitCanvas)
+    }
+
+    setMode(mode) {
+        /** @type {typeof Shape} */
+        let shapeType = shapeTypes[mode];
+
+        /** @type {{label, type, onValueChange}[]} */
+        let createAttrs;
+        switch (mode) {
+            case "cursor":
+                this.canvas.onclick = (e) => {
+                    const glMousePos = {
+                        x: e.clientX - this.canvas.offsetLeft,
+                        y: this.canvas.height - (e.clientY - this.canvas.offsetTop)
+                    };
+                    let pixels = new Uint8Array(4);
+                    this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
+
+                    this.selectedObjectId = pixels[2];
+                    this.render();
+                }
+                this.canvas.style.cursor = "default";
+                this.canvas.onmousedown = undefined;
+                this.canvas.onmousemove = undefined;
+                this.canvas.onmouseup = undefined;
+
+                this.rightSidebar.innerHTML = "";
+                break;
+                
+            default:
+                this.selectedObjectId = null
+
+                this.canvas.onclick = undefined;
+                this.canvas.onmousedown = (e) => shapeType.onMouseDown(e, this);
+                this.canvas.style.cursor = "crosshair";
+
+                createAttrs = shapeType.getCreateAttrs()
+                this.setSidebarAttrs(createAttrs)
+
+                this.render();
+                break;
+        }
+    }
+
+    addObject(object) {
+        this.objects.push(object);
+
+        this.render();
+    }
+
+    /**
+     * 
+     * @param {{label, type, onValueChange}[]} createAttrs 
+     */
+    setSidebarAttrs(createAttrs) {
+        createAttrs.forEach((attr) => {
+            let label = document.createElement("label")
+            label.innerHTML = attr.label;
+            this.rightSidebar.appendChild(label);
+
+            switch (attr.type) {
+                case "color":
+                    let input = document.createElement("input");
+                    input.setAttribute("type", "color");
+                    input.onchange = (e) => attr.onValueChange(e);
+                    this.rightSidebar.appendChild(input);
+                    this.rightSidebar.appendChild(document.createElement("br"));
+                    break;
+            }
+        });
+    }
+
+    render() {
+        /** @type {{id, index, count, mode}[]} */
+        let renderList = [];
+        let vertices = [];
+        let colors = [];
+        let hitColors = [];
+
+        this.objects.forEach((object) => {
+            // Each object add to render list
+            let objectVertices = object.getVertices();
+            let objectVerticesColors = object.getVerticesColors();
+
+            let re = {
+                id: object.id,
+                index: vertices.length/2,
+                count: objectVertices.length/2,
+                mode: object.getDrawingMode()
+            };
+            renderList.push(re);
+
+            objectVertices.forEach((x) => {
+                vertices.push(x);
+            });
+            objectVerticesColors.forEach((x) => {
+                colors.push(x);
+            });
+            for (let i = 0; i < re.count; i++) {
+                hitColors.push(0, 0, re.id * 1.0/255, 1);
+            }
+            // End of each object add to render list
+
+            // Selected object boundary drawing
+            if (this.selectedObjectId == re.id) {
+                let leftMost = objectVertices[0];
+                let rightMost = objectVertices[0];
+                let topMost = objectVertices[1];
+                let bottomMost = objectVertices[1];
+                for (let i = 0; i < objectVertices.length; i += 2) {
+                    if (objectVertices[i] < leftMost) {
+                        leftMost = objectVertices[i];
+                    }
+                    if (objectVertices[i] > rightMost) {
+                        rightMost = objectVertices[i];
+                    }
+                    if (objectVertices[i+1] < bottomMost) {
+                        bottomMost = objectVertices[i+1];
+                    }
+                    if (objectVertices[i+1] > topMost) {
+                        topMost = objectVertices[i+1];
+                    }
+                }
+
+                let re = {
+                    id: 0,
+                    index: vertices.length/2,
+                    count: 4*4,
+                    mode: this.gl.LINES
+                }
+                renderList.push(re)
+
+                let offset = 10 / this.canvas.width;
+                vertices.push(leftMost-offset, topMost+offset, leftMost+2*offset, topMost+offset, leftMost-offset, topMost+offset, leftMost-offset, topMost-2*offset)
+                vertices.push(rightMost+offset, topMost+offset, rightMost-2*offset, topMost+offset, rightMost+offset, topMost+offset, rightMost+offset, topMost-2*offset)
+                vertices.push(leftMost-offset, bottomMost-offset, leftMost+2*offset, bottomMost-offset, leftMost-offset, bottomMost-offset, leftMost-offset, bottomMost+2*offset)
+                vertices.push(rightMost+offset, bottomMost-offset, rightMost-2*offset, bottomMost-offset, rightMost+offset, bottomMost-offset, rightMost+offset, bottomMost+2*offset)
+                for (let i = 0; i < re.count; i++) {
+                    colors.push(0, 0, 0, 1)
+                    hitColors.push(0, 0, 0, 1)
+                }
+            }
+            // End of selected object boundary drawing
+
+        });
+
+        // Front canvas
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(vertices), this.gl.STATIC_DRAW);
+
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(colors), this.gl.STATIC_DRAW);
+
+        // Hit canvas
+        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hvBuffer);
+        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(vertices), this.hitGl.STATIC_DRAW);
+
+        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hcBuffer);
+        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(hitColors), this.hitGl.STATIC_DRAW);;
+
+        requestAnimationFrame(() => {
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
+            renderList.forEach((re) => {
+                this.gl.drawArrays(re.mode, re.index, re.count);
+                this.hitGl.drawArrays(re.mode, re.index, re.count);
+            });
+        });
+    }
+
     /**
      * 
      * @param {HTMLCanvasElement} canvas 
      * @param {HTMLCanvasElement} hitCanvas
      */
-    constructor(canvas, hitCanvas) {
+    initializeWebGL(canvas, hitCanvas) {
         this.canvas = canvas;
         this.gl = canvas.getContext('webgl');
 
@@ -93,266 +282,6 @@ class Webcad {
 
         this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
     }
-
-    render() {
-        /** @type {{id, index, count, mode}[]} */
-        let renderList = [];
-        let vertices = [];
-        let colors = [];
-        let hitColors = [];
-
-        this.objects.forEach((object) => {
-            let objectVertices = object.getVertices();
-
-            let re = {
-                id: object.id,
-                index: vertices.length/2,
-                count: objectVertices.length/2,
-                mode: object.getDrawingMode()
-            };
-            renderList.push(re);
-
-            objectVertices.forEach((x) => {
-                vertices.push(x);
-            });
-            for (let i = 0; i < re.count; i++) {
-                if (this.selectedObjectId == re.id) {
-                    colors.push(1, 0, 0, 1);
-                } else {
-                    colors.push(1, 1, 0, 1);
-                }
-                hitColors.push(0, 0, re.id * 1.0/255, 1);
-            }
-        });
-
-        // Front canvas
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(vertices), this.gl.STATIC_DRAW);
-
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(colors), this.gl.STATIC_DRAW);
-
-        // Hit canvas
-        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hvBuffer);
-        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(vertices), this.hitGl.STATIC_DRAW);
-
-        this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hcBuffer);
-        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(hitColors), this.hitGl.STATIC_DRAW);;
-
-        // console.log(vertices);
-        // console.log(colors);
-
-        requestAnimationFrame(() => {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            this.hitGl.clear(this.hitGl.COLOR_BUFFER_BIT);
-            renderList.forEach((re) => {
-                this.gl.drawArrays(re.mode, re.index, re.count);
-                this.hitGl.drawArrays(re.mode, re.index, re.count);
-            });
-        });
-    }
-
-    setMode(mode) {
-        /** @type {typeof Shape} */
-        let shapeType = shapeTypes[mode];
-        switch (mode) {
-            case "cursor":
-                this.canvas.onclick = (e) => {
-                    const glMousePos = {
-                        x: e.clientX - this.canvas.offsetLeft,
-                        y: this.canvas.height - (e.clientY - this.canvas.offsetTop)
-                    };
-                    let pixels = new Uint8Array(4);
-                    this.hitGl.readPixels(glMousePos.x, glMousePos.y, 1, 1, this.hitGl.RGBA, this.hitGl.UNSIGNED_BYTE, pixels);
-
-                    this.selectedObjectId = pixels[2];
-                    this.render();
-                }
-                this.canvas.onmousedown = undefined;
-                this.canvas.onmousemove = undefined;
-                this.canvas.onmouseup = undefined;
-                break;
-                
-            default:
-                this.canvas.onclick = undefined;
-                this.canvas.onmousedown = (e) => shapeType.onMouseDown(e, this);
-                break;
-        }
-    }
-
-    addObject(object) {
-        this.objects.push(object);
-
-        this.render();
-    }
-}
-
-class Shape {
-    /**@type {Number} */
-    id;
-
-    /**@type {Webcad} */
-    webcad;
-
-    /**@type {boolean} */
-    isDrawing = true;
-
-    /**
-     * 
-     * @param {Number} id
-     * @param {Webcad} webcad
-     */
-    constructor(id, webcad) {
-        this.id = id;
-        this.webcad = webcad;
-    }
-
-    /**
-     * @returns {Float32Array}
-     */
-    getVertices() {
-        console.log('Not yet implemented, override it!');
-    }
-
-    /**
-     * @returns {number}
-     */
-    getDrawingMode() {
-        console.log('Not yet implemented, override it!');
-    }
-
-    /**
-     * On mouse down
-     * @param {MouseEvent} e
-     * @param {Webcad} webcad
-     */
-    static onMouseDown(e, webcad) {
-        console.log('Not yet implemented, override it!');
-    }
-
-    /**
-     * When object is selected and mouse is moving
-     * @param {MouseEvent} e 
-     */
-    static onMouseMove(e) {
-        console.log('Not yet implemented, override it!');
-    }
-
-    /**
-     * When object is selected and mouse is up
-     * @param {MouseEvent} e 
-     */
-    static onMouseUp(e) {
-        console.log('Not yet implemented, override it!');
-    }
-}
-
-class Square extends Shape {
-    /**
-     * Position in pixel, origin is lower left
-     * @type {{x, y}} */
-    position = {x: 0, y: 0};
-
-    /**
-     * Square width in pixel
-     * @type {number}
-     */
-    width = 0;
-
-    /**
-     * Vertices in pixel, origin is lower left
-     * @type {number[]}
-     */
-    vertices = [
-        [0, 0],
-        [0, 0],
-        [0, 0],
-        [0, 0]
-    ]
-
-    /**
-     * 
-     * @param {number} id 
-     * @param {Webcad} webcad 
-     */
-    constructor(id, webcad) {
-        super(id, webcad);
-    }
-
-    recalculateVertices() {
-        const x = this.position.x;
-        const y = this.position.y;
-
-        this.vertices[0] = [x - this.width/2, y + this.width/2];
-        this.vertices[1] = [x + this.width/2, y + this.width/2];
-        this.vertices[2] = [x - this.width/2, y - this.width/2];
-        this.vertices[3] = [x + this.width/2, y - this.width/2];
-    }
-
-    /**Always use this method to set square position */
-    setPosition(x, y) {
-        this.position.x = x;
-        this.position.y = y;
-
-        this.recalculateVertices();
-    }
-
-    /**Always use this method to set square width */
-    setWidth(width) {
-        this.width = width;
-
-        this.recalculateVertices();
-    }
-
-    getVertices() {
-        return flatten(this.vertices.map((el) => {
-            return [
-                -1 + 2*el[0]/this.webcad.canvas.width,
-                -1 + 2*el[1]/this.webcad.canvas.height
-            ]
-        }));
-    }
-
-    getDrawingMode() {
-        return this.webcad.gl.TRIANGLE_STRIP;
-    }
-
-    /**
-     * On mouse down
-     * @param {MouseEvent} e
-     * @param {Webcad} webcad
-     */
-    static onMouseDown(e, webcad) {
-        const square = new Square(webcad.lastId++, webcad);
-        square.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
-        square.setWidth(0);
-
-        webcad.addObject(square);
-        let initialPos = {
-            x: square.position.x,
-            y: square.position.y
-        }
-
-        webcad.canvas.onmousemove = (e) => {
-            const cursPos = {
-                x: e.clientX - webcad.canvas.offsetLeft,
-                y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
-            };
-            const leftModifier = cursPos.x > initialPos.x ? 1 : -1;
-            const topModifier = cursPos.y > initialPos.y ? 1 : -1;
-            
-            const finalWidth = Math.max(Math.abs(cursPos.x - initialPos.x), Math.abs(cursPos.y - initialPos.y));
-            
-            square.setWidth(finalWidth);
-            square.setPosition(initialPos.x + finalWidth/2 * leftModifier, initialPos.y + finalWidth/2 * topModifier);
-
-            webcad.render();
-        };
-
-        webcad.canvas.onmouseup = (e) => {
-            webcad.canvas.onmousemove = undefined;
-        };
-    }
 }
 
 const vertexShaderSrc = `
@@ -377,7 +306,3 @@ void main() {
     gl_FragColor = fColor;
 }
 `
-
-const shapeTypes = {
-    "square": Square
-}
