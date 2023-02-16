@@ -2,6 +2,8 @@
 /// <reference path="Shape.js" />
 /// <reference path="shapes/Square.js" />
 /// <reference path="shapes/Rectangle.js" />
+/// <reference path="line.js" />
+/// <reference path="polygon.js" />
 
 const VERTEX_SELECTION_TOLERANCE = 7.5;
 
@@ -43,15 +45,22 @@ class Webcad {
 
     /**
      * Set mode (cursor, draw square, rectangle, etc.)
-     * @param {string} mode 
+     * @param {string} mode
+     * @param {MouseEvent} e
      */
-    setMode(mode) {
+    setMode(mode, e) {
         /** @type {typeof Shape} */
         let shapeType = shapeTypes[mode];
 
         /** @type {{label, type, onValueChange, default}[]} */
         let createAttrs;
         switch (mode) {
+            case "line":
+                drawLine(e);
+                break;
+            case "polygon":
+                drawPolygon(e);
+                break;
             case "cursor":
                 this.rightSidebar.innerHTML = "";
 

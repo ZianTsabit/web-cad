@@ -12,28 +12,37 @@
     <div class="container">
         <div class="left-menu">
             <h1>2D Web Based CAD</h1>
-            <input type="radio" name="shape" value="line" checked>Garis<br>
-            <input type="radio" name="shape" value="square">Persegi<br>
-            <input type="radio" name="shape" value="rectangle">Persegi Panjang<br>
-            <input type="radio" name="shape" value="polygon">Polygon<br>
+            <input type="radio" name="shape" value="cursor" onclick="onModeChange(event)">Cursor<br>
+            <input type="radio" name="shape" value="line" onclick="onModeChange(event)">Garis<br>
+            <input type="radio" name="shape" value="square" onclick="onModeChange(event)">Persegi<br>
+            <input type="radio" name="shape" value="rectangle" onclick="onModeChange(event)">Persegi Panjang<br>
+            <input type="radio" name="shape" value="polygon" onclick="onModeChange(event)">Polygon<br>
             <input type="number" id="n-polygon" min="3" value = 3 onchange="changeN()">
         </div>
         
-        <div class="canvas-container">
-          <canvas id="webgl-canvas" width="900" height="900" style="border: 1px solid black;" >
+        <div class="canvas-container" style="width: 700px; height: 700px;">
+          <canvas id="webgl-canvas" width="700" height="700" style="border: 1px solid black; position: absolute; z-index: 6;" >
             Your browser does not support the HTML5 canvas tag.
           </canvas>
+          <canvas id="hitCanvas" width="700" height="700" style="border: 1px solid black; position: absolute; z-index: 5;"></canvas>
         </div>
         
         <div class="right-menu">
-          
+          <h2>Properties</h2>
+          <div id="right-menu">
+          </div>
         </div>
 
         <script src="utils.js"></script>
+        <script src="Shape.js"></script>
+        <script src="shapes/Square.js"></script>
+        <script src="shapes/Rectangle.js"></script>
+
         <script src="line.js"></script>
-        <script src="square.js"></script>
         <script src="polygon.js"></script>
         <script src="app.js"></script>
+
+        <script src="Webcad.js"></script>
 
         <script>
           /// <reference path="utils.js" />
@@ -42,28 +51,15 @@
 
           window.onload = (e) => {
             const canvas = document.getElementById('webgl-canvas');
-            canvas.addEventListener('click', (e) => {
-              let modeChecked;
-              const radios = document.getElementsByName("shape");
-              for (let i = 0; i < radios.length; i++) {
-                if (radios[i].checked) {
-                  modeChecked = radios[i];
-                  break;
-                }
-              }
+            const hitCanvas = document.getElementById('hitCanvas');
+            const rightMenu = document.getElementById("right-menu");
 
-              switch (modeChecked.value) {
-                case "line":
-                  drawLine(e);
-                  break;
-                case "square":
-                  drawSquare(e);
-                  break;
-                case "polygon":
-                  drawPolygon(e);
-                  break;
-              }
-            })
+            webcad = new Webcad(canvas, hitCanvas, rightMenu);
+            webcad.setMode("cursor");
+          }
+
+          function onModeChange(e) {
+            webcad.setMode(e.target.value, e);
           }
         </script>
     </div>

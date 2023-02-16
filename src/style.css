@@ -13,19 +13,14 @@ body {
   
 .left-menu,
 .right-menu {
-    width: 500px;
     min-height: 100vh;
     background-color: white;
-    text-align: center;
+    text-align: start;
     margin: 0;
     padding: 0;
 }
 
 .canvas-container {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     margin: 0;
     padding: 0;
 }
