@@ -1,34 +1,64 @@
 /// <reference path="utils.js" />
 
+
+/**
+ * Yang perlu dioverride fungsi turunan:
+ * 
+ * translate(...)
+ * moveVertext(...)
+ * 
+ * getVertices(...)
+ * getVerticesColor(...)
+ * getDrawingMode(...)
+ * 
+ * getSidebarAttrs(...)
+ * getVertexSidebarAttrs(...)
+ * 
+ * static getCreateAttrs(...)
+ * static onCreate(...)
+ * 
+ */
 class Shape {
-    /**@type {Number} */
-    id;
-
-    /**@type {Webcad} */
-    webcad;
-
-    /**@type {boolean} */
-    isDrawing = true;
+    /**@type {Number} */ id;
+    /**@type {string} */ type;
+    /**@type {Webcad} */ webcad;
+    /**@type {boolean} */ isDrawing = true;
 
     /**
-     * 
+     * Create a new abstract shape
      * @param {Number} id
      * @param {Webcad} webcad
+     * @param {string} type
      */
-    constructor(id, webcad) {
+    constructor(id, webcad, type) {
         this.id = id;
         this.webcad = webcad;
+        this.type = type;
     }
 
+    /**
+     * Translate object by diffX and diffY
+     * @param {number} diffX 
+     * @param {number} diffY 
+     */
     translate(diffX, diffY) {
         console.log('Not yet implemented, override it!');
     }
 
+    /**
+     * Vertex at pixel position (pointX, pointY) of current shape is being dragged by user, move it
+     * @param {number} pointX 
+     * @param {number} pointY 
+     * @param {number} tolerance 
+     * @param {number} diffX 
+     * @param {number} diffY 
+     */
     moveVertex(pointX, pointY, tolerance, diffX, diffY){
         console.log('Not yet implemented, override it!');
     }
 
     /**
+     * Get float vertices for rendering (Normalized in -1..1, not in pixel)
      * @returns {Float32Array}
      */
     getVertices() {
@@ -36,6 +66,7 @@ class Shape {
     }
 
     /**
+     * Get float vertices' color for rendering (Normalized in 0..1 range, not 0..255)
      * @returns {Float32Array}
      */
     getVerticesColors() {
@@ -43,6 +74,7 @@ class Shape {
     }
 
     /**
+     * Get drawing mode for this shape (TRIANGLE_STRIP, TRIANGLE_FAN, LINES, etc.)
      * @returns {number}
      */
     getDrawingMode() {
@@ -84,225 +116,5 @@ class Shape {
      */
     static onCreate(e, webcad) {
         console.log('Not yet implemented, override it!');
-    }
-}
-
-class Square extends Shape {
-    /**
-     * Position in pixel, origin is lower left
-     * @type {{x, y}} */
-    position = {x: 0, y: 0};
-
-    /**
-     * Square width in pixel
-     * @type {number}
-     */
-    width = 0;
-
-    /**
-     * Vertices in pixel, origin is lower left
-     * @type {number[]}
-     */
-    vertices = [
-        [0, 0],
-        [0, 0],
-        [0, 0],
-        [0, 0]
-    ];
-
-    /** Color of each vertex, in rgba array (0-255) */
-    colors = [
-        [0, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, 0, 0, 1]
-    ];
-
-
-    /** Hex string
-     * @type {string} */
-    static defaultColor = "#000000";
-
-    /**
-     * 
-     * @param {number} id 
-     * @param {Webcad} webcad 
-     */
-    constructor(id, webcad) {
-        super(id, webcad);
-
-        this.setAllVertexColor(Square.defaultColor);
-    }
-
-    recalculateVertices() {
-        const x = this.position.x;
-        const y = this.position.y;
-
-        this.vertices[0] = [x - this.width/2, y + this.width/2];
-        this.vertices[1] = [x + this.width/2, y + this.width/2];
-        this.vertices[2] = [x - this.width/2, y - this.width/2];
-        this.vertices[3] = [x + this.width/2, y - this.width/2];
-    }
-
-    /**Always use this method to set square position */
-    setPosition(x, y) {
-        this.position.x = x;
-        this.position.y = y;
-
-        this.recalculateVertices();
-    }
-
-    /**Always use this method to set square width */
-    setWidth(width) {
-        this.width = width;
-
-        this.recalculateVertices();
-    }
-
-    setAllVertexColor(hex) {
-        const colorArr = hexToRgb(hex);
-        for(let i = 0; i < 4; i++) {
-            this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
-        }
-    }
-
-    translate(diffX, diffY) {
-        this.setPosition(this.position.x + diffX, this.position.y + diffY);
-    }
-
-    getVertices() {
-        return flatten(this.vertices.map((el) => {
-            return [
-                -1 + 2*el[0]/this.webcad.canvas.width,
-                -1 + 2*el[1]/this.webcad.canvas.height
-            ];
-        }));
-    }
-
-    getVerticesColors() {
-        return flatten(this.colors.map((el) => {
-            return [el[0]/255, el[1]/255, el[2]/255, el[3]/255];
-        }));
-    }
-
-    getDrawingMode() {
-        return this.webcad.gl.TRIANGLE_STRIP;
-    }
-
-    moveVertex(pointX, pointY, tolerance, diffX, diffY){
-        let selectedVertexIdx = this.getVertexIdx(pointX, pointY, tolerance);
-
-        if (selectedVertexIdx == null) {
-            return;
-        }
-
-        let xModifier = 1;
-        let yModifier = 1;
-        switch (selectedVertexIdx) {
-            case 0:
-                xModifier = -1;
-                break;
-            case 2:
-                xModifier = -1;
-                yModifier = -1;
-                break;
-            case 3:
-                yModifier = -1;
-                break;
-        }
-        let finalDiff = (diffX*xModifier + diffY*yModifier)/2;
-        this.setWidth(this.width + finalDiff);
-        this.setPosition(this.position.x + xModifier*finalDiff/2, this.position.y + yModifier*finalDiff/2);
-    }
-
-    /**
-     * Return list of what you can do to vertices in this shape (color, etc.)
-     * @returns {{label, type, onValueChange, default}[]}
-     */
-    getVertexSidebarAttrs(poinX, poinY, tolerance) {
-        return [{
-            label: "Vertex Color: ",
-            type: "color",
-            onValueChange: (e) => {
-                let i = this.getVertexIdx(poinX, poinY, tolerance);
-                if (i == null) return;
-
-                const colorArr = hexToRgb(e.target.value);
-                this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
-            }
-        }];
-    }
-
-    /**
-     * @returns {{label, type, onValueChange}[]}
-     */
-    static getCreateAttrs() {
-        return [{   label: "Square Color: ",
-                type: "color",
-                onValueChange: (e) => { Square.setDefaultColor(e.target.value) },
-                default: Square.defaultColor
-        }];
-    }
-    
-    /**
-     * 
-     * @param {string} hex 
-     */
-    static setDefaultColor(hex) {
-        Square.defaultColor = hex;
-    }
-
-    /**
-     * When creating a new shape
-     * @param {MouseEvent} e
-     * @param {Webcad} webcad
-     */
-    static onCreate(e, webcad) {
-        const square = new Square(webcad.lastId++, webcad);
-        square.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
-        square.setWidth(0);
-
-        webcad.addObject(square);
-        let initialPos = {
-            x: square.position.x,
-            y: square.position.y
-        }
-
-        webcad.canvas.onmousemove = (e) => {
-            const cursPos = {
-                x: e.clientX - webcad.canvas.offsetLeft,
-                y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
-            };
-            const leftModifier = cursPos.x > initialPos.x ? 1 : -1;
-            const topModifier = cursPos.y > initialPos.y ? 1 : -1;
-            
-            const finalWidth = Math.max(Math.abs(cursPos.x - initialPos.x), Math.abs(cursPos.y - initialPos.y));
-            
-            square.setWidth(finalWidth);
-            square.setPosition(initialPos.x + finalWidth/2 * leftModifier, initialPos.y + finalWidth/2 * topModifier);
-
-            webcad.render();
-        };
-
-        webcad.canvas.onmouseup = (e) => {
-            webcad.canvas.onmousemove = undefined;
-        };
-    }
-
-    /**
-     * 
-     * @param {number} pointX
-     * @param {number} pointY
-     * @param {number} tolerance
-     * @returns {number | null}
-     */
-    getVertexIdx(pointX, pointY, tolerance) {
-        for (let i = 0; i < this.vertices.length; i++) {
-            const point = this.vertices[i];
-            if (Math.abs(point[0] - pointX) <= tolerance && Math.abs(point[1] - pointY) <= tolerance) {
-                return i;
-            }
-        }
-        return null;
     }
 }

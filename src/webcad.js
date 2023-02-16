@@ -1,45 +1,36 @@
 /// <reference path="utils.js" />
-/// <reference path="shape.js" />
-/// <reference path="square.js" />
+/// <reference path="Shape.js" />
+/// <reference path="shapes/Square.js" />
+/// <reference path="shapes/Rectangle.js" />
 
 const VERTEX_SELECTION_TOLERANCE = 7.5;
 
 const shapeTypes = {
-    "square": Square
+    "square": Square,
+    "rectangle": Rectangle
 }
 
 class Webcad {
-    /** @type {number} */
-    lastId = 1;
+    /** @type {number} */ lastId = 1;
 
-    /**@type {Shape[]} */
-    objects = [];
+    /**@type {Shape[]} */ objects = [];
 
-    /**@type {number} */
-    selectedObjectId = null;
+    /**@type {number} */ selectedObjectId = null;
 
-    /**@type {boolean} */
-    isDrawing = false;
+    /**@type {boolean} */ isDrawing = false;
 
-    /** @type {HTMLCanvasElement} */
-    canvas;
-    /** @type {WebGLRenderingContext} */
-    gl;
-    vBuffer;
-    cBuffer;
+    /** @type {HTMLCanvasElement} */ canvas;
+    /** @type {WebGLRenderingContext} */ gl;
+    vBuffer; cBuffer;
 
-    /**@type {HTMLCanvasElement} */
-    hitCanvas;
-    /**@type {WebGLRenderingContext} */
-    hitGl;
-    hvBuffer;
-    hcBuffer;
+    /**@type {HTMLCanvasElement} */ hitCanvas;
+    /**@type {WebGLRenderingContext} */ hitGl;
+    hvBuffer; hcBuffer;
 
-    /** @type {HTMLDivElement} */
-    rightSidebar;
+    /** @type {HTMLDivElement} */ rightSidebar;
 
     /**
-     * 
+     * Create a new Webcad app
      * @param {HTMLCanvasElement} canvas 
      * @param {HTMLCanvasElement} hitCanvas
      * @param {HTMLDivElement} rightSidebar
@@ -50,6 +41,10 @@ class Webcad {
         this.initializeWebGL(canvas, hitCanvas)
     }
 
+    /**
+     * Set mode (cursor, draw square, rectangle, etc.)
+     * @param {string} mode 
+     */
     setMode(mode) {
         /** @type {typeof Shape} */
         let shapeType = shapeTypes[mode];
@@ -76,11 +71,16 @@ class Webcad {
                     if (!obj) {
                         this.canvas.onmousemove = undefined;
                         this.canvas.onmouseup = undefined;
+                        this.rightSidebar.innerHTML = "";
                         return;
                     };
                     
                     this.rightSidebar.innerHTML = "";
                     if (pixels[0] == 0) {    // 0: translasi
+                        let attrs = obj.getSidebarAttrs();
+                        this.setSidebarAttrs(attrs);
+                        this.render();
+
                         this.canvas.onmousemove = (e) => {
                             const currMousePos = {
                                 x: e.clientX - this.canvas.offsetLeft,
@@ -134,6 +134,7 @@ class Webcad {
                 this.canvas.onmousedown = (e) => shapeType.onCreate(e, this);
                 this.canvas.style.cursor = "crosshair";
 
+                this.rightSidebar.innerHTML = "";
                 createAttrs = shapeType.getCreateAttrs();
                 this.setSidebarAttrs(createAttrs);
 
@@ -142,6 +143,10 @@ class Webcad {
         }
     }
 
+    /**
+     * Add a new object and draw
+     * @param {Shape} object 
+     */
     addObject(object) {
         this.objects.push(object);
 
@@ -149,7 +154,7 @@ class Webcad {
     }
 
     /**
-     * 
+     * Set right sidebar attributes
      * @param {{label, type, onValueChange, default}[]} createAttrs 
      */
     setSidebarAttrs(createAttrs) {
@@ -158,24 +163,30 @@ class Webcad {
             label.innerHTML = attr.label;
             this.rightSidebar.appendChild(label);
 
+            let input = document.createElement("input");
             switch (attr.type) {
+                case "number":
+                    input.setAttribute("type", "number");
+                    break;
                 case "color":
-                    let input = document.createElement("input");
                     input.setAttribute("type", "color");
-                    input.onchange = (e) => {
-                        attr.onValueChange(e);
-                        this.render();
-                    }
-
-                    if (attr.default) { input.value = attr.default };
-
-                    this.rightSidebar.appendChild(input);
-                    this.rightSidebar.appendChild(document.createElement("br"));
                     break;
             }
+
+            if (attr.default) { input.value = attr.default };
+            input.onchange = (e) => {
+                attr.onValueChange(e);
+                this.render();
+            }
+
+            this.rightSidebar.appendChild(input);
+            this.rightSidebar.appendChild(document.createElement("br"));
         });
     }
 
+    /**
+     * (Re)render canvas
+     */
     render() {
         /** @type {{id, index, count, mode}[]} */
         let renderList = [];
@@ -289,7 +300,7 @@ class Webcad {
     }
 
     /**
-     * 
+     * Initialize WebGL (program, shader, etc.)
      * @param {HTMLCanvasElement} canvas 
      * @param {HTMLCanvasElement} hitCanvas
      */
@@ -356,7 +367,7 @@ class Webcad {
     }
 
     /**
-     * 
+     * Draw vertices indicator
      * @param {number} vertexX 
      * @param {number} vertexY 
      * @param {number} size 
@@ -402,7 +413,7 @@ class Webcad {
     }
 
     /**
-     * 
+     * Read pixel value that is hit by cursor
      * @param {number} clientX 
      * @param {number} clientY 
      * @returns {Uint8Array}
