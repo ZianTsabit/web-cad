@@ -1,15 +1,16 @@
 /// <reference path="utils.js" />
-/// <reference path="Shape.js" />
+/// <reference path="shape.js" />
 /// <reference path="shapes/Square.js" />
 /// <reference path="shapes/Rectangle.js" />
-/// <reference path="line.js" />
+/// <reference path="shapes/Line.js" />
 /// <reference path="polygon.js" />
 
 const VERTEX_SELECTION_TOLERANCE = 7.5;
 
 const shapeTypes = {
     "square": Square,
-    "rectangle": Rectangle
+    "rectangle": Rectangle,
+    // "line": Line
 }
 
 class Webcad {

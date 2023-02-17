@@ -1,5 +1,5 @@
 /// <reference path="../utils.js" />
-/// <reference path="../Shape.js" />
+/// <reference path="../shape.js" />
 
 class Rectangle extends Shape {
     /**

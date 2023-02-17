@@ -1,4 +1,4 @@
-/// <reference path="utils.js" />
+/// <reference path="../utils.js" />
 
 // function to draw line
 function drawLine(e) {
