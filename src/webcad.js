@@ -5,12 +5,13 @@
 /// <reference path="shapes/Line.js" />
 /// <reference path="polygon.js" />
 
-const VERTEX_SELECTION_TOLERANCE = 7.5;
+const VERTEX_SELECTION_TOLERANCE = 15;
+
 
 const shapeTypes = {
     "square": Square,
     "rectangle": Rectangle,
-    // "line": Line
+    "line": Line
 }
 
 class Webcad {
@@ -56,9 +57,6 @@ class Webcad {
         /** @type {{label, type, onValueChange, default}[]} */
         let createAttrs;
         switch (mode) {
-            case "line":
-                drawLine(e);
-                break;
             case "polygon":
                 drawPolygon(e);
                 break;

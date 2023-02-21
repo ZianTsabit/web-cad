@@ -46,6 +46,15 @@ class Shape {
     }
 
     /**
+     * Rotate object by angle
+     * @param {number} angle
+     * 
+     */
+    rotate(angle) {
+        console.log('Not yet implemented, override it!');
+    }
+
+    /**
      * Vertex at pixel position (pointX, pointY) of current shape is being dragged by user, move it
      * @param {number} pointX 
      * @param {number} pointY 

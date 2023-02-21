@@ -1,96 +1,243 @@
 /// <reference path="../utils.js" />
+/// <reference path="../shape.js" />
 
-// function to draw line
-function drawLine(e) {
-    
-    const rect = canvas.getBoundingClientRect();
-    const canvasX = e.clientX - rect.left;
-    const canvasY = e.clientY - rect.top;
-    state.drawAllObjects();
-    if (first) {
+class Line extends Shape {
+    /**
+     * Position in pixel, origin is lower left
+     * @type {{x, y}} */
+    position1 = {x: 0, y: 0};
+    position2 = {x: 0, y: 0};
+
+    /**
+     * line width in pixel
+     * @type {number}
+     */
+    width = 0;
+
+    /**
+     * line height in pixel
+     * @type {number}
+     */
+    height = 0;
+
+    /**
+     * Vertices in pixel, origin is lower left
+     * @type {number[]}
+     */
+    vertices = [
+        [0, 0],
+        [0, 0]
+    ];
+
+    /** Color of each vertex, in rgba array (0-255) */
+    colors = [
+        [0, 0, 0, 1],
+        [0, 0, 0, 1]
+    ];
+
+    /** Hex string
+     * @type {string} */
+    static defaultColor = "#000000";
+
+    /**
+     * 
+     * @param {number} id 
+     * @param {Webcad} webcad 
+     */
+    constructor(id, webcad) {
+        super(id, webcad, "line");
+        this.setAllVertexColor(Line.defaultColor);
+    }
+
+    recalculateVertices() {
+        const x1 = this.position.x;
+        const y1 = this.position.y;
+        const x2 = this.position2.x;
+        const y2 = this.position2.y;
         
-        first = false;
-        p1 = [-1 + 2*canvasX/canvas.width, -1 + 2*(canvas.height-canvasY)/canvas.height];
+        this.vertices[0] = [x1 - this.width/2, y1 + this.height/2];
+        this.vertices[1] = [x1 + this.width/2, y1 - this.height/2];
 
-    } else {
-
-        first = true;
-        p2 = [-1 + 2*canvasX/canvas.width, -1 + 2*(canvas.height-canvasY)/canvas.height];
-
-        state.add(new Line(p1[0], p1[1], p2[0], p2[1])); 
     }
     
-    state.drawAllObjects();
-}
+    setPosition(x, y) {
+        console.log(x);
+        console.log(y);
+        this.position.x = x;
+        this.position.y = y;
+        
+        this.recalculateVertices();
+    }
 
-class Line {
+    setWidth(width) {
+        this.width = width;
 
-    constructor(x1, y1, x2, y2) {
-        this.x1 = x1;
-        this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
-        this.colorHex = "#000000";
-        this.vertices = this.makeVertices();
+        this.recalculateVertices();
     }
     
-    makeVertices() {
-        let vertices = [
-            [this.x1, this.y1],
-            [this.x2, this.y2]
-        ];
+    setHeight(height) {
+        this.height = height;
 
-        return vertices;
+        this.recalculateVertices();
     }
 
-    changeColor(newcolorHex) {
-        this.colorHex = newcolorHex;
-    }
-
-    draw() {
-        renderLine(this.vertices, this.colorHex);
-    }
-}
-
-function renderLine(vertices, colorHex) {
-    
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
-
-    let program = initShader(gl, vertexShaderSrc, fragmentShaderSrc);
-    gl.useProgram(program);
-
-    // Vertex
-    vBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
-    
-    let vPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition);
-
-    // Color
-    cBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten([toGLSL(colorHex),toGLSL(colorHex)]), gl.STATIC_DRAW);
-
-    let vColor = gl.getAttribLocation(program, "vColor");
-    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vColor);
-
-    // gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.LINES, 0, flatten(vertices).length/2);
-}
-
-function toGLSL(hex){
-    var color;
-    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
-        color = hex.substring(1).split('');
-        if(color.length == 3){
-            color = [color[0], color[0], color[1], color[1], color[2], color[2]];
+    setAllVertexColor(hex) {
+        const colorArr = hexToRgb(hex);
+        for(let i = 0; i < 2; i++) {
+            this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
         }
-        color = '0x' + color.join('');
-        return [((color>>16)&255)/255, ((color>>8)&255)/255, (color&255)/255, 1];
     }
-    throw new Error('Bad Hex');
+
+    translate(diffX, diffY) {
+        this.setPosition(this.position.x + diffX, this.position.y + diffY);
+    }
+
+    getVertices() {
+        return flatten(this.vertices.map((el) => {
+            return [
+                -1 + 2*el[0]/this.webcad.canvas.width,
+                -1 + 2*el[1]/this.webcad.canvas.height
+            ];
+        }));
+    }
+
+    getVerticesColors() {
+        return flatten(this.colors.map((el) => {
+            return [el[0]/255, el[1]/255, el[2]/255, el[3]/255];
+        }));
+    }
+
+    getDrawingMode() {
+        return this.webcad.gl.LINES;
+    }
+
+    moveVertex(pointX, pointY, tolerance, diffX, diffY){
+        let selectedVertexIdx = this.getVertexIdx(pointX, pointY, tolerance);
+
+        if (selectedVertexIdx == null) {
+            return;
+        }
+
+        this.setWidth(this.width + diffX);
+        this.setHeight(this.height + diffY);
+        this.setPosition(this.position.x + diffX/2, this.position.y + diffY/2);
+    }
+
+    /**
+     * Returs list of what you can do to this shape
+     * @returns {{label, type, onValueChange, default}[]}
+     */
+    getSidebarAttrs() {
+        return [
+            {
+                label: "Width: ",
+                type: "number",
+                onValueChange: (e) => {
+                    this.setWidth(e.target.value);
+                },
+                default: this.width
+            }, {
+                label: "Height: ",
+                type: "number",
+                onValueChange: (e) => {
+                    this.setHeight(e.target.value);
+                },
+                default: this.width
+            }
+        ];
+    }
+
+    /**
+     * Return list of what you can do to vertices in this shape (color, etc.)
+     * @returns {{label, type, onValueChange, default}[]}
+     */
+    getVertexSidebarAttrs(poinX, poinY, tolerance) {
+        return [{
+            label: "Vertex Color: ",
+            type: "color",
+            onValueChange: (e) => {
+                let i = this.getVertexIdx(poinX, poinY, tolerance);
+                if (i == null) return;
+
+                const colorArr = hexToRgb(e.target.value);
+                this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
+            }
+        }];
+    }
+
+    /**
+     * @returns {{label, type, onValueChange}[]}
+     */
+    static getCreateAttrs() {
+        return [{   label: "Line Color: ",
+                type: "color",
+                onValueChange: (e) => { Line.setDefaultColor(e.target.value) },
+                default: Line.defaultColor
+        }];
+    }
+
+    /**
+     * 
+     * @param {string} hex 
+     */
+    static setDefaultColor(hex) {
+        Line.defaultColor = hex;
+    }
+
+    /**
+     * When creating a new shape
+     * @param {MouseEvent} e
+     * @param {Webcad} webcad
+     */
+    static onCreate(e, webcad) {
+        const rect = new Line(webcad.lastId++, webcad);
+        rect.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
+        rect.setWidth(0);
+        rect.setHeight(0);
+        webcad.addObject(rect);
+        let initialPos = {
+            x: rect.position.x,
+            y: rect.position.y
+        }
+
+        webcad.canvas.onmousemove = (e) => {
+            const cursPos = {
+                x: e.clientX - webcad.canvas.offsetLeft,
+                y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
+            };
+            const leftModifier = cursPos.x > initialPos.x ? 1 : -1;
+            const topModifier = cursPos.y > initialPos.y ? 1 : -1;
+            
+            //const finalWidth = Math.max(Math.abs(cursPos.x - initialPos.x), Math.abs(cursPos.y - initialPos.y));
+            const absDiffX = Math.abs(cursPos.x - initialPos.x);
+            const absDiffY = Math.abs(cursPos.y - initialPos.y);
+            
+            rect.setWidth(absDiffX);
+            rect.setHeight(absDiffY);
+            rect.setPosition(initialPos.x + absDiffX/2 * leftModifier, initialPos.y + absDiffY/2 * topModifier);
+
+            webcad.render();
+        };
+
+        webcad.canvas.onmouseup = (e) => {
+            webcad.canvas.onmousemove = undefined;
+        };
+    }
+
+    /**
+     * 
+     * @param {number} pointX
+     * @param {number} pointY
+     * @param {number} tolerance
+     * @returns {number | null}
+     */
+    getVertexIdx(pointX, pointY, tolerance) {
+        for (let i = 0; i < this.vertices.length; i++) {
+            const point = this.vertices[i];
+            if (Math.abs(point[0] - pointX) <= tolerance && Math.abs(point[1] - pointY) <= tolerance) {
+                return i;
+            }
+        }
+        return null;
+    }
 }
