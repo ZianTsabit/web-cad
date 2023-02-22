@@ -20,6 +20,12 @@ class Line extends Shape {
     height = 0;
 
     /**
+     * Line angle in radian
+     * @type {number}
+     */
+    angle = 0;
+
+    /**
      * Vertices in pixel, origin is lower left
      * @type {number[]}
      */
@@ -49,11 +55,15 @@ class Line extends Shape {
     }
 
     recalculateVertices() {
+        
+        const cos = Math.cos(this.angle * Math.PI / 180);
+        const sin = Math.sin(this.angle * Math.PI / 180);
+        
         const x1 = this.position.x;
         const y1 = this.position.y;
         
-        const x2 = this.position.x + this.width;
-        const y2 = this.position.y + this.height;
+        const x2 = x1 + this.width * cos;
+        const y2 = y1 + this.width * sin;
 
         this.vertices = [
             [x1, y1],
@@ -65,6 +75,12 @@ class Line extends Shape {
     setPosition(x, y) {
         this.position.x = x;
         this.position.y = y;
+        
+        this.recalculateVertices();
+    }
+
+    setAngle(angle) {
+        this.angle = angle;
         
         this.recalculateVertices();
     }
@@ -219,20 +235,13 @@ class Line extends Shape {
     getSidebarAttrs() {
         return [
             {
-                label: "Width: ",
+                label:"Angle: ",
                 type: "number",
-                onValueChange: (e) => {
-                    this.setWidth(e.target.value);
+                onValueChange: (e) => { 
+                    this.setAngle(e.target.value); 
                 },
-                default: this.width
-            }, {
-                label: "Height: ",
-                type: "number",
-                onValueChange: (e) => {
-                    this.setHeight(e.target.value);
-                },
-                default: this.width
-            }
+                default: this.angle
+            },
         ];
     }
 }

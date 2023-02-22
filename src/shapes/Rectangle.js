@@ -44,7 +44,6 @@ class Rectangle extends Shape {
         [0, 0, 0, 1]
     ];
 
-
     /** Hex string
      * @type {string} */
     static defaultColor = "#000000";
@@ -72,7 +71,6 @@ class Rectangle extends Shape {
         this.vertices[1] = [x + this.width/2*cos - this.height/2*sin, y + this.width/2*sin + this.height/2*cos];
         this.vertices[2] = [x - this.width/2*cos + this.height/2*sin, y - this.width/2*sin - this.height/2*cos];
         this.vertices[3] = [x + this.width/2*cos + this.height/2*sin, y + this.width/2*sin - this.height/2*cos];
-
     }
 
     setAngle(angle) {
