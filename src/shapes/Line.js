@@ -55,21 +55,21 @@ class Line extends Shape {
     }
 
     recalculateVertices() {
-        
+        const x1 = this.position.x;
+        const y1 = this.position.y;
+        const x2 = this.position.x + this.width;
+        const y2 = this.position.y + this.height;
+        const centerX = (x1 + x2) / 2;
+        const centerY = (y1 + y2) / 2;
+
         const cos = Math.cos(this.angle * Math.PI / 180);
         const sin = Math.sin(this.angle * Math.PI / 180);
         
-        const x1 = this.position.x;
-        const y1 = this.position.y;
+        this.vertices[0][0] = centerX + (x1 - centerX) * cos - (y1 - centerY) * sin;
+        this.vertices[0][1] = centerY + (x1 - centerX) * sin + (y1 - centerY) * cos;
+        this.vertices[1][0] = centerX + (x2 - centerX) * cos - (y2 - centerY) * sin;
+        this.vertices[1][1] = centerY + (x2 - centerX) * sin + (y2 - centerY) * cos;
         
-        const x2 = x1 + this.width * cos;
-        const y2 = y1 + this.width * sin;
-
-        this.vertices = [
-            [x1, y1],
-            [x2, y2]
-        ];
-
     }
     
     setPosition(x, y) {
