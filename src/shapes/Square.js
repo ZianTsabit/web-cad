@@ -14,6 +14,12 @@ class Square extends Shape {
     width = 0;
 
     /**
+     * Square angle in radian
+     * @type {number}
+     */
+    angle = 0;
+
+    /**
      * Vertices in pixel, origin is lower left
      * @type {number[]}
      */
@@ -52,16 +58,39 @@ class Square extends Shape {
         const x = this.position.x;
         const y = this.position.y;
 
-        this.vertices[0] = [x - this.width/2, y + this.width/2];
-        this.vertices[1] = [x + this.width/2, y + this.width/2];
-        this.vertices[2] = [x - this.width/2, y - this.width/2];
-        this.vertices[3] = [x + this.width/2, y - this.width/2];
+        const halfWidth = this.width/2;
+
+        const cos = Math.cos(this.angle * Math.PI / 180);
+        const sin = Math.sin(this.angle * Math.PI / 180);
+
+        this.vertices[0] = [
+            x + halfWidth*cos - halfWidth*sin,
+            y + halfWidth*sin + halfWidth*cos
+        ];
+        this.vertices[1] = [
+            x - halfWidth*cos - halfWidth*sin,
+            y - halfWidth*sin + halfWidth*cos   
+        ];
+        this.vertices[2] = [
+            x + halfWidth*cos + halfWidth*sin,
+            y + halfWidth*sin - halfWidth*cos
+        ];
+        this.vertices[3] = [
+            x - halfWidth*cos + halfWidth*sin,
+            y - halfWidth*sin - halfWidth*cos
+        ];
     }
 
     /**Always use this method to set square position */
     setPosition(x, y) {
         this.position.x = x;
         this.position.y = y;
+
+        this.recalculateVertices();
+    }
+
+    setAngle(angle) {
+        this.angle = angle;
 
         this.recalculateVertices();
     }
@@ -134,14 +163,24 @@ class Square extends Shape {
      * @returns {{label, type, onValueChange, default}[]}
      */
         getSidebarAttrs() {
-            return [{
-                label: "Width: ",
-                type: "number",
-                onValueChange: (e) => {
-                    this.setWidth(e.target.value);
+            return [
+                {
+                    label: "Width: ",
+                    type: "number",
+                    onValueChange: (e) => {
+                        this.setWidth(e.target.value);
+                    },
+                    default: this.width
                 },
-                default: this.width
-            }];
+                {
+                    label: "Angle: ",
+                    type: "number",
+                    onValueChange: (e) => {
+                        this.setAngle(e.target.value);
+                    },
+                    default: this.angle
+                }
+            ];
         }
 
     /**

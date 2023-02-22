@@ -14,6 +14,12 @@ class Rectangle extends Shape {
     width = 0;
 
     /**
+     * Rectangle angle in radian
+     * @type {number}
+     */
+    angle = 0;
+
+    /**
      * Rectangle height in pixel
      * @type {number}
      */
@@ -58,10 +64,22 @@ class Rectangle extends Shape {
         const x = this.position.x;
         const y = this.position.y;
 
-        this.vertices[0] = [x - this.width/2, y + this.height/2];
-        this.vertices[1] = [x + this.width/2, y + this.height/2];
-        this.vertices[2] = [x - this.width/2, y - this.height/2];
-        this.vertices[3] = [x + this.width/2, y - this.height/2];
+        // Rotate vertices in rectrangle
+        const cos = Math.cos(this.angle * Math.PI / 180);
+        const sin = Math.sin(this.angle * Math.PI / 180);
+        
+        this.vertices[0] = [x - this.width/2*cos - this.height/2*sin, y - this.width/2*sin + this.height/2*cos];
+        this.vertices[1] = [x + this.width/2*cos - this.height/2*sin, y + this.width/2*sin + this.height/2*cos];
+        this.vertices[2] = [x - this.width/2*cos + this.height/2*sin, y - this.width/2*sin - this.height/2*cos];
+        this.vertices[3] = [x + this.width/2*cos + this.height/2*sin, y + this.width/2*sin - this.height/2*cos];
+
+    }
+
+    setAngle(angle) {
+        this.angle = angle;
+        this.setPosition
+
+        this.recalculateVertices();
     }
 
     /**Always use this method to set rectangle position */
@@ -147,6 +165,14 @@ class Rectangle extends Shape {
                         this.setHeight(e.target.value);
                     },
                     default: this.width
+                },
+                {
+                    label: "Angle: ",
+                    type: "number",
+                    onValueChange: (e) => {
+                        this.setAngle(e.target.value);
+                    },
+                    default: this.angle
                 }
             ];
         }

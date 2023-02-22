@@ -5,7 +5,7 @@
 /// <reference path="shapes/Line.js" />
 /// <reference path="polygon.js" />
 
-const VERTEX_SELECTION_TOLERANCE = 15;
+const VERTEX_SELECTION_TOLERANCE = 7.5;
 
 
 const shapeTypes = {
@@ -179,6 +179,9 @@ class Webcad {
                     break;
                 case "color":
                     input.setAttribute("type", "color");
+                    break;
+                case "angle":
+                    input.setAttribute("type", "number");
                     break;
             }
 

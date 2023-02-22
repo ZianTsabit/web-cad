@@ -216,25 +216,23 @@ class Line extends Shape {
      * Returs list of what you can do to this shape
      * @returns {{label, type, onValueChange, default}[]}
      */
-        getSidebarAttrs() {
-            return [
-                {
-                    label: "Width: ",
-                    type: "number",
-                    onValueChange: (e) => {
-                        this.setWidth(e.target.value);
-                    },
-                    default: this.width
-                }, {
-                    label: "Height: ",
-                    type: "number",
-                    onValueChange: (e) => {
-                        this.setHeight(e.target.value);
-                    },
-                    default: this.width
-                }
-            ];
-        }
-
-
+    getSidebarAttrs() {
+        return [
+            {
+                label: "Width: ",
+                type: "number",
+                onValueChange: (e) => {
+                    this.setWidth(e.target.value);
+                },
+                default: this.width
+            }, {
+                label: "Height: ",
+                type: "number",
+                onValueChange: (e) => {
+                    this.setHeight(e.target.value);
+                },
+                default: this.width
+            }
+        ];
+    }
 }
