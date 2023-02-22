@@ -55,13 +55,13 @@ class Line extends Shape {
     }
 
     recalculateVertices() {
-        const x1 = this.position.x;
-        const y1 = this.position.y;
-        const x2 = this.position.x + this.width;
-        const y2 = this.position.y + this.height;
-        const centerX = (x1 + x2) / 2;
-        const centerY = (y1 + y2) / 2;
-
+        const centerX = this.position.x;
+        const centerY = this.position.y;
+        const x1 = this.position.x - this.width/2;
+        const y1 = this.position.y - this.height/2;
+        const x2 = this.position.x + this.width/2;
+        const y2 = this.position.y + this.height/2;
+    
         const cos = Math.cos(this.angle * Math.PI / 180);
         const sin = Math.sin(this.angle * Math.PI / 180);
         
@@ -136,6 +136,7 @@ class Line extends Shape {
 
         this.setWidth(this.width + diffX);
         this.setHeight(this.height + diffY);
+        this.setPosition(this.position.x + diffX/2, this.position.y + diffY/2);
     }
 
     /**
