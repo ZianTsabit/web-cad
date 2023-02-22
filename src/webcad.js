@@ -72,6 +72,7 @@ class Webcad {
                     let prevMousePos = { x: e.clientX - this.canvas.offsetLeft, y: this.canvas.height - (e.clientY - this.canvas.offsetTop) };
 
                     const pixels = this.readHitPixel(e.clientX, e.clientY);
+                    console.log(pixels);
                     this.selectedObjectId = pixels[2];
                     this.render();
                     
@@ -234,45 +235,88 @@ class Webcad {
 
             // Selected object: vertices selector and boundary drawing
             if (this.selectedObjectId == re.id) {
-                for (let i = 0; i < objectVertices.length; i +=2) {
-                    let obv = objectVertices;
-                    this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
-                }
+                
+                if(re.mode == this.gl.LINES) {
+                    
+                    for (let i = 0; i < objectVertices.length; i +=2) {
+                        let obv = objectVertices;
+                        this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
+                    }
 
-                let leftMost = objectVertices[0];
-                let rightMost = objectVertices[0];
-                let topMost = objectVertices[1];
-                let bottomMost = objectVertices[1];
-                for (let i = 0; i < objectVertices.length; i += 2) {
-                    if (objectVertices[i] < leftMost) {
-                        leftMost = objectVertices[i];
+                    let leftMost = objectVertices[0];
+                    let rightMost = objectVertices[0];
+                    let topMost = objectVertices[1];
+                    let bottomMost = objectVertices[1];
+                    for (let i = 0; i < objectVertices.length; i += 2) {
+                        if (objectVertices[i] < leftMost) {
+                            leftMost = objectVertices[i];
+                        }
+                        if (objectVertices[i] > rightMost) {
+                            rightMost = objectVertices[i];
+                        }
+                        if (objectVertices[i+1] < bottomMost) {
+                            bottomMost = objectVertices[i+1];
+                        }
+                        if (objectVertices[i+1] > topMost) {
+                            topMost = objectVertices[i+1];
+                        }
                     }
-                    if (objectVertices[i] > rightMost) {
-                        rightMost = objectVertices[i];
-                    }
-                    if (objectVertices[i+1] < bottomMost) {
-                        bottomMost = objectVertices[i+1];
-                    }
-                    if (objectVertices[i+1] > topMost) {
-                        topMost = objectVertices[i+1];
-                    }
-                }
 
-                let re = {
-                    id: 0,
-                    index: vertices.length/2,
-                    count: 4*4,
-                    mode: this.gl.LINES
-                }
-                renderList.push(re)
+                    let re = {
+                        id: 0,
+                        index: vertices.length/2,
+                        count: 4*4,
+                        mode: this.gl.LINES
+                    }
+                    renderList.push(re)
 
-                let offset = 15 / this.canvas.width;
-                vertices.push(leftMost-offset, topMost+offset, leftMost+2*offset, topMost+offset, leftMost-offset, topMost+offset, leftMost-offset, topMost-2*offset)
-                vertices.push(rightMost+offset, topMost+offset, rightMost-2*offset, topMost+offset, rightMost+offset, topMost+offset, rightMost+offset, topMost-2*offset)
-                vertices.push(leftMost-offset, bottomMost-offset, leftMost+2*offset, bottomMost-offset, leftMost-offset, bottomMost-offset, leftMost-offset, bottomMost+2*offset)
-                vertices.push(rightMost+offset, bottomMost-offset, rightMost-2*offset, bottomMost-offset, rightMost+offset, bottomMost-offset, rightMost+offset, bottomMost+2*offset)
-                for (let i = 0; i < re.count; i++) {
-                    colors.push(0, 0, 0, 1)
+                    for (let i = 0; i < re.count; i++) {
+                        colors.push(0, 0, 0, 1)
+                    }
+                    
+                }else{
+
+                    // Draw boundary
+                    for (let i = 0; i < objectVertices.length; i +=2) {
+                        let obv = objectVertices;
+                        this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
+                    }
+
+                    let leftMost = objectVertices[0];
+                    let rightMost = objectVertices[0];
+                    let topMost = objectVertices[1];
+                    let bottomMost = objectVertices[1];
+                    for (let i = 0; i < objectVertices.length; i += 2) {
+                        if (objectVertices[i] < leftMost) {
+                            leftMost = objectVertices[i];
+                        }
+                        if (objectVertices[i] > rightMost) {
+                            rightMost = objectVertices[i];
+                        }
+                        if (objectVertices[i+1] < bottomMost) {
+                            bottomMost = objectVertices[i+1];
+                        }
+                        if (objectVertices[i+1] > topMost) {
+                            topMost = objectVertices[i+1];
+                        }
+                    }
+
+                    let re = {
+                        id: 0,
+                        index: vertices.length/2,
+                        count: 4*4,
+                        mode: this.gl.LINES
+                    }
+                    renderList.push(re)
+
+                    let offset = 15 / this.canvas.width;
+                    vertices.push(leftMost-offset, topMost+offset, leftMost+2*offset, topMost+offset, leftMost-offset, topMost+offset, leftMost-offset, topMost-2*offset)
+                    vertices.push(rightMost+offset, topMost+offset, rightMost-2*offset, topMost+offset, rightMost+offset, topMost+offset, rightMost+offset, topMost-2*offset)
+                    vertices.push(leftMost-offset, bottomMost-offset, leftMost+2*offset, bottomMost-offset, leftMost-offset, bottomMost-offset, leftMost-offset, bottomMost+2*offset)
+                    vertices.push(rightMost+offset, bottomMost-offset, rightMost-2*offset, bottomMost-offset, rightMost+offset, bottomMost-offset, rightMost+offset, bottomMost+2*offset)
+                    for (let i = 0; i < re.count; i++) {
+                        colors.push(0, 0, 0, 1)
+                    }
                 }
             }
             // End of selected object boundary drawing

@@ -5,8 +5,7 @@ class Line extends Shape {
     /**
      * Position in pixel, origin is lower left
      * @type {{x, y}} */
-    position1 = {x: 0, y: 0};
-    position2 = {x: 0, y: 0};
+    position = {x: 0, y: 0};
 
     /**
      * line width in pixel
@@ -52,17 +51,18 @@ class Line extends Shape {
     recalculateVertices() {
         const x1 = this.position.x;
         const y1 = this.position.y;
-        const x2 = this.position2.x;
-        const y2 = this.position2.y;
         
-        this.vertices[0] = [x1 - this.width/2, y1 + this.height/2];
-        this.vertices[1] = [x1 + this.width/2, y1 - this.height/2];
+        const x2 = this.position.x + this.width;
+        const y2 = this.position.y + this.height;
+
+        this.vertices = [
+            [x1, y1],
+            [x2, y2]
+        ];
 
     }
     
     setPosition(x, y) {
-        console.log(x);
-        console.log(y);
         this.position.x = x;
         this.position.y = y;
         
@@ -120,31 +120,6 @@ class Line extends Shape {
 
         this.setWidth(this.width + diffX);
         this.setHeight(this.height + diffY);
-        this.setPosition(this.position.x + diffX/2, this.position.y + diffY/2);
-    }
-
-    /**
-     * Returs list of what you can do to this shape
-     * @returns {{label, type, onValueChange, default}[]}
-     */
-    getSidebarAttrs() {
-        return [
-            {
-                label: "Width: ",
-                type: "number",
-                onValueChange: (e) => {
-                    this.setWidth(e.target.value);
-                },
-                default: this.width
-            }, {
-                label: "Height: ",
-                type: "number",
-                onValueChange: (e) => {
-                    this.setHeight(e.target.value);
-                },
-                default: this.width
-            }
-        ];
     }
 
     /**
@@ -169,7 +144,8 @@ class Line extends Shape {
      * @returns {{label, type, onValueChange}[]}
      */
     static getCreateAttrs() {
-        return [{   label: "Line Color: ",
+        return [{   
+                label: "Line Color: ",
                 type: "color",
                 onValueChange: (e) => { Line.setDefaultColor(e.target.value) },
                 default: Line.defaultColor
@@ -192,8 +168,7 @@ class Line extends Shape {
     static onCreate(e, webcad) {
         const rect = new Line(webcad.lastId++, webcad);
         rect.setPosition(e.clientX - webcad.canvas.offsetLeft, webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop));
-        rect.setWidth(0);
-        rect.setHeight(0);
+        
         webcad.addObject(rect);
         let initialPos = {
             x: rect.position.x,
@@ -205,16 +180,12 @@ class Line extends Shape {
                 x: e.clientX - webcad.canvas.offsetLeft,
                 y: webcad.canvas.height - (e.clientY - webcad.canvas.offsetTop)
             };
-            const leftModifier = cursPos.x > initialPos.x ? 1 : -1;
-            const topModifier = cursPos.y > initialPos.y ? 1 : -1;
             
-            //const finalWidth = Math.max(Math.abs(cursPos.x - initialPos.x), Math.abs(cursPos.y - initialPos.y));
-            const absDiffX = Math.abs(cursPos.x - initialPos.x);
-            const absDiffY = Math.abs(cursPos.y - initialPos.y);
+            const absDiffX = cursPos.x - initialPos.x;
+            const absDiffY = cursPos.y - initialPos.y;
             
             rect.setWidth(absDiffX);
             rect.setHeight(absDiffY);
-            rect.setPosition(initialPos.x + absDiffX/2 * leftModifier, initialPos.y + absDiffY/2 * topModifier);
 
             webcad.render();
         };
@@ -240,4 +211,30 @@ class Line extends Shape {
         }
         return null;
     }
+
+    /**
+     * Returs list of what you can do to this shape
+     * @returns {{label, type, onValueChange, default}[]}
+     */
+        getSidebarAttrs() {
+            return [
+                {
+                    label: "Width: ",
+                    type: "number",
+                    onValueChange: (e) => {
+                        this.setWidth(e.target.value);
+                    },
+                    default: this.width
+                }, {
+                    label: "Height: ",
+                    type: "number",
+                    onValueChange: (e) => {
+                        this.setHeight(e.target.value);
+                    },
+                    default: this.width
+                }
+            ];
+        }
+
+
 }
