@@ -150,7 +150,7 @@ class Polygon extends Shape {
 
     /**
      * Returs list of what you can do to this shape
-     * @returns {{label, type, onValueChange, default}[]}
+     * @returns {{label, type, onValueChange, default, id}[]}
      */
     getSidebarAttrs() {
         return [
@@ -158,16 +158,33 @@ class Polygon extends Shape {
                 label: "Width: ",
                 type: "number",
                 onValueChange: (e) => {
+                    if(document.getElementById("poly-lock").checked){
+                        this.setHeight(e.target.value * this.height / this.width);
+                        document.getElementById("poly-height").value = this.height;
+                    }
                     this.setWidth(e.target.value);
                 },
-                default: this.width
+                default: this.width,
+                id: "poly-width"
             }, {
                 label: "Height: ",
                 type: "number",
                 onValueChange: (e) => {
+                    if(document.getElementById("poly-lock").checked){
+                        this.setWidth(e.target.value * this.width / this.height);
+                        document.getElementById("poly-width").value = this.width;
+                    }
                     this.setHeight(e.target.value);
                 },
-                default: this.width
+                default: this.height,
+                id: "poly-height"
+            },
+            {
+                label: "Lock ratio",
+                type: "checkbox",
+                onValueChange: (e) => { console.log(e.target.value) },
+                default: "lock",
+                id: "poly-lock"
             },
             {
                 label: "Angle: ",
@@ -175,7 +192,8 @@ class Polygon extends Shape {
                 onValueChange: (e) => {
                     this.setAngle(e.target.value);
                 },
-                default: this.angle
+                default: this.angle,
+                id: "poly-angle"
             },
             {
                 label: "Sides: ",
@@ -183,7 +201,8 @@ class Polygon extends Shape {
                 onValueChange: (e) => {
                     this.setSides(e.target.value);
                 },
-                default: this.sides
+                default: this.sides,
+                id: "poly-sides"
             },
         ];
     }

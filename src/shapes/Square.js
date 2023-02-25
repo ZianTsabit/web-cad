@@ -160,7 +160,7 @@ class Square extends Shape {
 
     /**
      * Returs list of what you can do to this shape
-     * @returns {{label, type, onValueChange, default}[]}
+     * @returns {{label, type, onValueChange, default, id}[]}
      */
         getSidebarAttrs() {
             return [
@@ -170,7 +170,8 @@ class Square extends Shape {
                     onValueChange: (e) => {
                         this.setWidth(e.target.value);
                     },
-                    default: this.width
+                    default: this.width,
+                    id: "square-width"
                 },
                 {
                     label: "Angle: ",
@@ -178,7 +179,8 @@ class Square extends Shape {
                     onValueChange: (e) => {
                         this.setAngle(e.target.value);
                     },
-                    default: this.angle
+                    default: this.angle,
+                    id: "square-angle"
                 }
             ];
         }

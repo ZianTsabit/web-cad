@@ -145,7 +145,7 @@ class Rectangle extends Shape {
 
     /**
      * Returs list of what you can do to this shape
-     * @returns {{label, type, onValueChange, default}[]}
+     * @returns {{label, type, onValueChange, default, id}[]}
      */
         getSidebarAttrs() {
             return [
@@ -153,16 +153,33 @@ class Rectangle extends Shape {
                     label: "Width: ",
                     type: "number",
                     onValueChange: (e) => {
+                        if(document.getElementById("rect-lock").checked){
+                            this.setHeight(e.target.value * this.height / this.width);
+                            document.getElementById("rect-height").value = this.height;
+                        }
                         this.setWidth(e.target.value);
                     },
-                    default: this.width
+                    default: this.width,
+                    id: "rect-width"
                 }, {
                     label: "Height: ",
                     type: "number",
                     onValueChange: (e) => {
+                        if(document.getElementById("rect-lock").checked){
+                            this.setWidth(e.target.value * this.width / this.height);
+                            document.getElementById("rect-width").value = this.width;
+                        }
                         this.setHeight(e.target.value);
                     },
-                    default: this.width
+                    default: this.height,
+                    id: "rect-height"
+                },
+                {
+                    label: "Lock ratio",
+                    type: "checkbox",
+                    onValueChange: (e) => { console.log(e.target.value) },
+                    default: "lock",
+                    id: "rect-lock"
                 },
                 {
                     label: "Angle: ",
@@ -170,7 +187,8 @@ class Rectangle extends Shape {
                     onValueChange: (e) => {
                         this.setAngle(e.target.value);
                     },
-                    default: this.angle
+                    default: this.angle,
+                    id: "rect-angle"
                 }
             ];
         }

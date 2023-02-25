@@ -163,7 +163,7 @@ class Webcad {
 
     /**
      * Set right sidebar attributes
-     * @param {{label, type, onValueChange, default}[]} createAttrs 
+     * @param {{label, type, onValueChange, default, id}[]} createAttrs 
      */
     setSidebarAttrs(createAttrs) {
         createAttrs.forEach((attr) => {
@@ -182,8 +182,11 @@ class Webcad {
                 case "angle":
                     input.setAttribute("type", "number");
                     break;
-            }
-
+                case "checkbox":
+                    input.setAttribute("type", "checkbox")
+                }
+                
+            input.setAttribute("id", attr.id);
             if (attr.default) { input.value = attr.default };
             input.onchange = (e) => {
                 attr.onValueChange(e);

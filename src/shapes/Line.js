@@ -231,7 +231,7 @@ class Line extends Shape {
 
     /**
      * Returs list of what you can do to this shape
-     * @returns {{label, type, onValueChange, default}[]}
+     * @returns {{label, type, onValueChange, default, id}[]}
      */
     getSidebarAttrs() {
         return [
@@ -241,7 +241,8 @@ class Line extends Shape {
                 onValueChange: (e) => { 
                     this.setAngle(e.target.value); 
                 },
-                default: this.angle
+                default: this.angle,
+                id: "line-angle"
             },
         ];
     }
