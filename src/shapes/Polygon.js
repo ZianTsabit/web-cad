@@ -282,4 +282,73 @@ class Polygon extends Shape {
         }
         return null;
     }
+
+    /**
+     * turn into convexhull polygon
+     */
+    toConvexHullPolygon() {
+        const convexHull = this.convexHull(this.vertices);
+        if (convexHull == null) {
+            return;
+        }
+        
+        this.vertices = convexHull;
+    }
+
+    convexHull(points) {
+        // Check if the array has enough points to create a convex hull
+        if (points.length < 3) {
+        return null;
+        }
+
+        // Find the leftmost point
+        let leftmost = points[0];
+        for (let i = 1; i < points.length; i++) {
+        if (points[i][0] < leftmost[0]) {
+            leftmost = points[i];
+        }
+        }
+
+        // Initialize the hull with the leftmost point
+        const hull = [leftmost];
+        let current = leftmost;
+
+        // Loop until we reach the leftmost point again
+        do {
+        let next = points[0];
+
+        // Find the point that creates the smallest angle with the current point
+        for (let i = 1; i < points.length; i++) {
+            if (points[i] === current) {
+            continue;
+            }
+            
+            const angle = getAngle(current, next, points[i]);
+            if (angle < 0 || (angle === 0 && getDistance(current, points[i]) > getDistance(current, next))) {
+            next = points[i];
+            }
+        }
+
+        // Add the next point to the hull and make it the new current point
+        hull.push(next);
+        current = next;
+        } while (current !== leftmost);
+
+        return hull;
+    }
+      
+    getAngle(p1, p2, p3) {
+        const v1 = [p2[0] - p1[0], p2[1] - p1[1]];
+        const v2 = [p3[0] - p2[0], p3[1] - p2[1]];
+        const dotProduct = v1[0] * v2[0] + v1[1] * v2[1];
+        const det = v1[0] * v2[1] - v1[1] * v2[0];
+        return Math.atan2(det, dotProduct);
+    }
+      
+    getDistance(p1, p2) {
+        const dx = p2[0] - p1[0];
+        const dy = p2[1] - p1[1];
+        return dx * dx + dy * dy;
+    }
+        
 }
