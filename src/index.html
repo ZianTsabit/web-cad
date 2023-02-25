@@ -12,12 +12,17 @@
     <div class="container">
         <div class="left-menu">
             <h1>2D Web Based CAD</h1>
-            <input type="radio" name="shape" value="cursor" onclick="onModeChange(event)">Cursor<br>
+            <div>
+              <button onclick="save()">Save</button>
+              <button onclick="load()">Load</button>
+            </div>
+            <input type="radio" name="shape" value="cursor" onclick="onModeChange(event)" checked>Cursor<br>
             <input type="radio" name="shape" value="line" onclick="onModeChange(event)">Garis<br>
             <input type="radio" name="shape" value="square" onclick="onModeChange(event)">Persegi<br>
             <input type="radio" name="shape" value="rectangle" onclick="onModeChange(event)">Persegi Panjang<br>
             <input type="radio" name="shape" value="polygon" onclick="onModeChange(event)">Polygon<br>
             <input type="number" id="n-polygon" min="3" value = 3>
+
         </div>
         
         <div class="canvas-container" style="width: 700px; height: 700px;">
@@ -42,6 +47,7 @@
         <script src="app.js"></script>
 
         <script src="webcad.js"></script>
+        <script src="saveload.js"></script>
 
         <script>
           /// <reference path="utils.js" />
