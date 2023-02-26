@@ -168,10 +168,10 @@ class Square extends Shape {
                     label: "Width: ",
                     type: "number",
                     onValueChange: (e) => {
-                        setInterval(() => {
-                            this.setAngle((this.angle + 1) % 360);
-                            this.webcad.render();
-                        }, 20);
+                        // setInterval(() => {
+                        //     this.setAngle((this.angle + 1) % 360);
+                        //     this.webcad.render();
+                        // }, 20);
                         this.setWidth(parseFloat(e.target.value));
                     },
                     default: this.width,
