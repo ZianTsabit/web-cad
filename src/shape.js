@@ -5,6 +5,7 @@
  * Yang perlu dioverride fungsi turunan:
  * 
  * translate(...)
+ * setAngle(...)
  * moveVertext(...)
  * 
  * getVertices(...)
