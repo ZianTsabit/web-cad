@@ -1,14 +1,24 @@
 # 2D Web Based CAD (Computer-Aided Design)
 
-Tugas 1 IF3260 Grafika Komputer 2D Web Based CAD
-
 ## Description
+
+2D Web CAD adalah aplikasi berbasis web yang memanfaatkan WebGL, WebGL merupakan kakas dengan spesialisasi pada ranah grafika yang dapat dengan mudah diintegrasikan pada web. 2D Web CAD menggunakan WebGL murni untuk mengimplementasikan fitur menggambar, mengedit, dan memvisualisasi sejumlah model pada kanvas.
 
 ## Requirements
 
-## How to Build?
+1. HTML, CSS, JavaScript
+2. Browser
 
-## **How to Run?**
+## How to Use?
+
+1. Buka index.html pada browser
+2. Pilih objek yang ingin dibangun (line, square, rectangle, polygon)
+3. Pilih default color di properties jika ingin merubah warna objek 
+4. Gambar objek
+5. Klik sudut jika ingin merubah warna sudut ataupun menarik (translasi) titik sudut
+6. Klik area objek jika ingin memindahkan (translasi) objek ataupun merubah properties dasar objek
+7. Klik area objek kemudian tekan animate rotation checkbox untuk melakukan animasi rotasi pada objek yang dipilih
+8. Klik save atau load untuk menyimpan atau memuat file simpanan dalam bentuk .json
 
 ## Contributors
 
