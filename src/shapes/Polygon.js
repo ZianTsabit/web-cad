@@ -78,8 +78,7 @@ class Polygon extends Shape {
     }
 
     setAngle(angle) {
-        this.angle = angle;
-        this.setPosition
+        this.angle = angle % 360;
 
         this.recalculateVertices();
     }
@@ -224,7 +223,7 @@ class Polygon extends Shape {
                 default: this.angle,
                 id: "poly-angle"
             }
-        ];
+        ] . concat(super.getSidebarAttrs());;
     }
 
     /**

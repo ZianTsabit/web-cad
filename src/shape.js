@@ -23,6 +23,8 @@ class Shape {
     /**@type {string} */ type;
     /**@type {Webcad} */ webcad;
     /**@type {boolean} */ isDrawing = true;
+    /**@type {Number} */ angle = 0;
+    /**@type {boolean} */ animateRotation = false;
 
     /**
      * Create a new abstract shape
@@ -50,7 +52,7 @@ class Shape {
      * @param {number} angle
      * 
      */
-    rotate(angle) {
+    setAngle(angle) {
         console.log('Not yet implemented, override it!');
     }
 
@@ -95,7 +97,20 @@ class Shape {
      * @returns {{label, type, onValueChange, default}[]}
      */
     getSidebarAttrs() {
-        console.log('Not yet implemented, override it!');
+        return [
+            {
+                label: "Animate Rotation: ",
+                type: "checkbox",
+                onValueChange: (e) => {
+                    if (e.target.checked) {
+                        this.animateRotation = true;
+                    } else {
+                        this.animateRotation = false;
+                    }
+                },
+                default: this.animateRotation
+            }
+        ];
     }
 
     /**

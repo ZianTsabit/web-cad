@@ -74,8 +74,7 @@ class Rectangle extends Shape {
     }
 
     setAngle(angle) {
-        this.angle = angle;
-        this.setPosition
+        this.angle = angle % 360;
 
         this.recalculateVertices();
     }
@@ -190,7 +189,7 @@ class Rectangle extends Shape {
                     default: this.angle,
                     id: "rect-angle"
                 }
-            ];
+            ] . concat(super.getSidebarAttrs());;
         }
 
     /**

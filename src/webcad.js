@@ -44,7 +44,22 @@ class Webcad {
     constructor(canvas, hitCanvas, rightSidebar) {
         this.rightSidebar = rightSidebar;
 
-        this.initializeWebGL(canvas, hitCanvas)
+        this.initializeWebGL(canvas, hitCanvas);
+
+        // Set interval for animation
+        setInterval(() => {
+            let animateSomething = false;
+            this.objects.forEach(object => {
+                if (object.animateRotation) {
+                    animateSomething = true;
+                    object.setAngle(object.angle + 1);
+                }
+            });
+
+            if (animateSomething) {
+                this.render();
+            }
+        }, 20);
     }
 
     /**
@@ -184,6 +199,7 @@ class Webcad {
                     break;
                 case "checkbox":
                     input.setAttribute("type", "checkbox");
+                    input.checked = attr.default;
                     break;
                 }
                 
@@ -250,9 +266,6 @@ class Webcad {
                 
                 if(re.mode == this.gl.LINES) {
                     let obv = objectVertices;
-                    for (let i = 0; i < objectVertices.length; i +=2) {
-                        this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
-                    }
 
                     // Drawing tolerance for line
                     let hre = {
@@ -269,6 +282,10 @@ class Webcad {
                     hitVertices.push(obv[2] - tolerance, obv[3] - tolerance);
                     for(let i = 0; i < hre.count; i++) {
                         hitColors.push(0, 0, hre.id/255, 1);
+                    }
+
+                    for (let i = 0; i < objectVertices.length; i +=2) {
+                        this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
                     }
                     
                 } else{

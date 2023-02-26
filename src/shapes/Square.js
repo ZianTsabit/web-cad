@@ -90,7 +90,7 @@ class Square extends Shape {
     }
 
     setAngle(angle) {
-        this.angle = angle;
+        this.angle = angle % 360;
 
         this.recalculateVertices();
     }
@@ -168,6 +168,10 @@ class Square extends Shape {
                     label: "Width: ",
                     type: "number",
                     onValueChange: (e) => {
+                        setInterval(() => {
+                            this.setAngle((this.angle + 1) % 360);
+                            this.webcad.render();
+                        }, 20);
                         this.setWidth(parseFloat(e.target.value));
                     },
                     default: this.width,
@@ -182,7 +186,7 @@ class Square extends Shape {
                     default: this.angle,
                     id: "square-angle"
                 }
-            ];
+            ] . concat(super.getSidebarAttrs());;
         }
 
     /**

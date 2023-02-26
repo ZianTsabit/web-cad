@@ -80,7 +80,7 @@ class Line extends Shape {
     }
 
     setAngle(angle) {
-        this.angle = angle;
+        this.angle = angle % 360;
         
         this.recalculateVertices();
     }
@@ -134,9 +134,15 @@ class Line extends Shape {
             return;
         }
 
-        this.setWidth(this.width + diffX);
-        this.setHeight(this.height + diffY);
-        this.setPosition(this.position.x + diffX/2, this.position.y + diffY/2);
+        if (selectedVertexIdx == 0) {
+            this.setWidth(this.width - diffX);
+            this.setHeight(this.height - diffY);
+            this.setPosition(this.position.x + diffX/2, this.position.y + diffY/2);
+        } else {
+            this.setWidth(this.width + diffX);
+            this.setHeight(this.height + diffY);
+            this.setPosition(this.position.x + diffX/2, this.position.y + diffY/2);
+        }
     }
 
     /**
@@ -244,6 +250,6 @@ class Line extends Shape {
                 default: this.angle,
                 id: "line-angle"
             },
-        ];
+        ] . concat(super.getSidebarAttrs());
     }
 }
