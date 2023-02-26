@@ -69,7 +69,10 @@ class Polygon extends Shape {
                 centerY + this.height/2 * Math.sin(2 * Math.PI * i / this.sides)
             ];
         }
-        
+        if(this.sides < this.vertices.length){
+            let remove_length = this.vertices.length - this.sides;
+            this.vertices.splice(this.sides,remove_length);
+        }        
     }
 
     setAngle(angle) {
@@ -159,10 +162,10 @@ class Polygon extends Shape {
                 type: "number",
                 onValueChange: (e) => {
                     if(document.getElementById("poly-lock").checked){
-                        this.setHeight(e.target.value * this.height / this.width);
+                        this.setHeight(parseFloat(e.target.value) * this.height / this.width);
                         document.getElementById("poly-height").value = this.height;
                     }
-                    this.setWidth(e.target.value);
+                    this.setWidth(parseFloat(e.target.value));
                 },
                 default: this.width,
                 id: "poly-width"
@@ -171,10 +174,10 @@ class Polygon extends Shape {
                 type: "number",
                 onValueChange: (e) => {
                     if(document.getElementById("poly-lock").checked){
-                        this.setWidth(e.target.value * this.width / this.height);
+                        this.setWidth(parseFloat(e.target.value) * this.width / this.height);
                         document.getElementById("poly-width").value = this.width;
                     }
-                    this.setHeight(e.target.value);
+                    this.setHeight(parseFloat(e.target.value));
                 },
                 default: this.height,
                 id: "poly-height"
@@ -190,7 +193,7 @@ class Polygon extends Shape {
                 label: "Angle: ",
                 type: "number",
                 onValueChange: (e) => {
-                    this.setAngle(e.target.value);
+                    this.setAngle(parseFloat(e.target.value));
                 },
                 default: this.angle,
                 id: "poly-angle"
@@ -199,7 +202,7 @@ class Polygon extends Shape {
                 label: "Sides: ",
                 type: "number",
                 onValueChange: (e) => {
-                    this.setSides(e.target.value);
+                    this.setSides(parseInt(e.target.value));
                 },
                 default: this.sides,
                 id: "poly-sides"
