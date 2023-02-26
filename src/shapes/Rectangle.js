@@ -161,9 +161,8 @@ class Rectangle extends Shape {
 
         // Normalize all
         const normalized = this.normalize();
-        const pN = rotate(pointX - x, pointY - y, -this.angle);
         const diffN = rotate(diffX, diffY, -this.angle);
-        let selectedVertexIdx = this.getVertexIdx(pN.x, pN.y, tolerance);
+        let selectedVertexIdx = this.getVertexIdx(pointX, pointY, tolerance);
 
         if (selectedVertexIdx == null) {
             return;
@@ -318,9 +317,10 @@ class Rectangle extends Shape {
      */
     getVertexIdx(pointX, pointY, tolerance) {
         const normalized = this.normalize();
+        const pN = rotate(pointX - this.position.x, pointY - this.position.y, -this.angle);
         for (let i = 0; i < this.vertices.length; i++) {
             const point = normalized[i];
-            if (Math.abs(point[0] - pointX) <= tolerance && Math.abs(point[1] - pointY) <= tolerance) {
+            if (Math.abs(point[0] - pN.x) <= tolerance && Math.abs(point[1] - pN.y) <= tolerance) {
                 return i;
             }
         }
