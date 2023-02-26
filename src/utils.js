@@ -1,4 +1,21 @@
 /**
+ * 
+ * @param {number} x 
+ * @param {number} y 
+ * @param {number} angle 
+ * @returns {{x,y}}
+ */
+function rotate(x, y, angle) {
+    const cos = Math.cos(angle * Math.PI / 180);
+    const sin = Math.sin(angle * Math.PI / 180);
+
+    const xn = x * cos - y * sin;
+    const yn = x * sin + y * cos;
+    return {x: xn, y: yn};
+}
+
+
+/**
  * Melakukan kompilasi shader, linking, dan mengembalikan suatu program
  * @param {WebGLRenderingContext} gl
  * @param {string} vertexShaderSrc

@@ -199,7 +199,7 @@ class Webcad {
                     break;
                 case "checkbox":
                     input.setAttribute("type", "checkbox");
-                    input.checked = attr.default;
+                    input.checked = attr.default === true;
                     break;
                 }
                 

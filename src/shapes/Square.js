@@ -60,25 +60,36 @@ class Square extends Shape {
 
         const halfWidth = this.width/2;
 
-        const cos = Math.cos(this.angle * Math.PI / 180);
-        const sin = Math.sin(this.angle * Math.PI / 180);
+        // Set vertices based on width
+        this.vertices = [
+            [x - halfWidth, y + halfWidth],
+            [x + halfWidth, y + halfWidth],
+            [x - halfWidth, y - halfWidth],
+            [x + halfWidth, y - halfWidth]
+        ];
+        // Rotate vertices
+        for(let i = 0; i < this.vertices.length; i++) {
+            const p = this.vertices[i];
+            const pr = rotate(p[0] - x, p[1] - y, this.angle);
+            this.vertices[i] = [pr.x + x, pr.y + y];
+        }
+    }
 
-        this.vertices[0] = [
-            x + halfWidth*cos - halfWidth*sin,
-            y + halfWidth*sin + halfWidth*cos
-        ];
-        this.vertices[1] = [
-            x - halfWidth*cos - halfWidth*sin,
-            y - halfWidth*sin + halfWidth*cos   
-        ];
-        this.vertices[2] = [
-            x + halfWidth*cos + halfWidth*sin,
-            y + halfWidth*sin - halfWidth*cos
-        ];
-        this.vertices[3] = [
-            x - halfWidth*cos + halfWidth*sin,
-            y - halfWidth*sin - halfWidth*cos
-        ];
+    /**
+     * Normalize return vertices in (0, 0) center coordinate and 0 degree angle
+     */
+    normalize() {
+        const x = this.position.x;
+        const y = this.position.y;
+
+        let normalized = [];
+        this.vertices.forEach(el => {
+            const xc = el[0] - x;
+            const yc= el[1] - y;
+            const rotated = rotate(xc, yc, -this.angle);
+            normalized.push([rotated.x, rotated.y]);
+        })
+        return normalized;
     }
 
     /**Always use this method to set square position */
@@ -133,29 +144,31 @@ class Square extends Shape {
     }
 
     moveVertex(pointX, pointY, tolerance, diffX, diffY){
-        let selectedVertexIdx = this.getVertexIdx(pointX, pointY, tolerance);
+        const x = this.position.x;
+        const y = this.position.y;
+
+        // Normalize all
+        const normalized = this.normalize();
+        const pN = rotate(pointX - x, pointY - y, -this.angle);
+        const diffN = rotate(diffX, diffY, -this.angle);
+        let selectedVertexIdx = this.getVertexIdx(pN.x, pN.y, tolerance);
 
         if (selectedVertexIdx == null) {
             return;
         }
+        
+        // Calculate projections and modifiers
+        const point = normalized[selectedVertexIdx];
+        const projections = (point[0] * diffN.x + point[1] * diffN.y) / Math.sqrt(point[0] * point[0] + point[1] * point[1]);
 
-        let xModifier = 1;
-        let yModifier = 1;
-        switch (selectedVertexIdx) {
-            case 0:
-                xModifier = -1;
-                break;
-            case 2:
-                xModifier = -1;
-                yModifier = -1;
-                break;
-            case 3:
-                yModifier = -1;
-                break;
-        }
-        let finalDiff = (diffX*xModifier + diffY*yModifier)/2;
-        this.setWidth(this.width + finalDiff);
-        this.setPosition(this.position.x + xModifier*finalDiff/2, this.position.y + yModifier*finalDiff/2);
+        const xModifier = point[0] >= 0 ? 1 : -1;
+        const yModifier = point[1] >= 0 ? 1 : -1;
+
+        const move = rotate(xModifier * projections/2, yModifier * projections/2, this.angle);
+
+        // Set width and position
+        this.setWidth(this.width + projections);
+        this.setPosition(this.position.x + move.x, this.position.y + move.y);
     }
 
     /**
@@ -168,10 +181,6 @@ class Square extends Shape {
                     label: "Width: ",
                     type: "number",
                     onValueChange: (e) => {
-                        setInterval(() => {
-                            this.setAngle((this.angle + 1) % 360);
-                            this.webcad.render();
-                        }, 20);
                         this.setWidth(parseFloat(e.target.value));
                     },
                     default: this.width,
@@ -271,8 +280,9 @@ class Square extends Shape {
      * @returns {number | null}
      */
     getVertexIdx(pointX, pointY, tolerance) {
+        const normalized = this.normalize();
         for (let i = 0; i < this.vertices.length; i++) {
-            const point = this.vertices[i];
+            const point = normalized[i];
             if (Math.abs(point[0] - pointX) <= tolerance && Math.abs(point[1] - pointY) <= tolerance) {
                 return i;
             }

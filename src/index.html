@@ -10,7 +10,7 @@
 </head>
 <body >
     <div class="container">
-        <div class="left-menu">
+        <div class="left-menu" id="left-menu">
             <h1>2D Web Based CAD</h1>
             <div>
               <button onclick="save()">Save</button>
@@ -24,7 +24,7 @@
             
         </div>
         
-        <div class="canvas-container" style="width: 700px; height: 700px;">
+        <div class="canvas-container" style="min-width: 700px; min-height: 700px;">
           <canvas id="webgl-canvas" width="700" height="700" style="border: 1px solid black; position: absolute; z-index: 6;" >
             Your browser does not support the HTML5 canvas tag.
           </canvas>
@@ -35,6 +35,18 @@
           <h2>Properties</h2>
           <div id="right-menu">
           </div>
+
+          <h2>Petunjuk</h2>
+          <ul>
+            <li>Program berbasis drag-and-drop</li>
+            <li>Cursor digunakan untuk memilih dan menggerakan objek/titik sudut</li>
+            <li>Buat objek dengan memilih salah satu bentuk yang ada, pilih pengaturan objek pada Properties, kemudian drag-and-drop untuk membuat objek</li>
+            <li>Gerakkan objek dengan memilihnya kemudian drag and drop (untuk Garis mungkin agak sulit, harus tepat)</li>
+            <li>Atur sifat objek dengan memilihnya kemudian mengaturnya di Properties</li>
+            <li>Geser titik sudut dengan drag-and-drop</li>
+            <li>Ubah warna titik sudut dengan memilihnya, kemudian mengatur di Properties</li>
+            <li><b>Animasi rotasi</b> dengan mengklik checkbox di Properties suatu objek</li>
+          </ul>
         </div>
 
         <script src="utils.js"></script>
