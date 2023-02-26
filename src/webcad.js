@@ -6,7 +6,7 @@
 /// <reference path="shapes/Polygon.js" />
 // / <reference path="polygon.js" />
 
-const VERTEX_SELECTION_TOLERANCE = 7.5;
+const VERTEX_SELECTION_TOLERANCE = 9;
 
 
 const shapeTypes = {

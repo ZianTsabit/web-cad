@@ -74,7 +74,13 @@ class Polygon extends Shape {
         if(this.sides < this.vertices.length){
             let remove_length = this.vertices.length - this.sides;
             this.vertices.splice(this.sides,remove_length);
-        }        
+        }
+        // Rotate vertices
+        for(let i = 0; i < this.vertices.length; i++) {
+            const p = this.vertices[i];
+            const pr = rotate(p[0] - centerX, p[1] - centerY, this.angle);
+            this.vertices[i] = [pr.x + centerX, pr.y + centerY];
+        }  
     }
 
     setAngle(angle) {
