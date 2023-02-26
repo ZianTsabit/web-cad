@@ -168,7 +168,7 @@ class Square extends Shape {
                     label: "Width: ",
                     type: "number",
                     onValueChange: (e) => {
-                        this.setWidth(e.target.value);
+                        this.setWidth(parseFloat(e.target.value));
                     },
                     default: this.width,
                     id: "square-width"
@@ -177,7 +177,7 @@ class Square extends Shape {
                     label: "Angle: ",
                     type: "number",
                     onValueChange: (e) => {
-                        this.setAngle(e.target.value);
+                        this.setAngle(parseFloat(e.target.value));
                     },
                     default: this.angle,
                     id: "square-angle"

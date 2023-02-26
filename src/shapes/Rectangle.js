@@ -154,10 +154,10 @@ class Rectangle extends Shape {
                     type: "number",
                     onValueChange: (e) => {
                         if(document.getElementById("rect-lock").checked){
-                            this.setHeight(e.target.value * this.height / this.width);
+                            this.setHeight(parseFloat(e.target.value) * this.height / this.width);
                             document.getElementById("rect-height").value = this.height;
                         }
-                        this.setWidth(e.target.value);
+                        this.setWidth(parseFloat(e.target.value));
                     },
                     default: this.width,
                     id: "rect-width"
@@ -166,10 +166,10 @@ class Rectangle extends Shape {
                     type: "number",
                     onValueChange: (e) => {
                         if(document.getElementById("rect-lock").checked){
-                            this.setWidth(e.target.value * this.width / this.height);
+                            this.setWidth(parseFloat(e.target.value) * this.width / this.height);
                             document.getElementById("rect-width").value = this.width;
                         }
-                        this.setHeight(e.target.value);
+                        this.setHeight(parseFloat(e.target.value));
                     },
                     default: this.height,
                     id: "rect-height"
@@ -185,7 +185,7 @@ class Rectangle extends Shape {
                     label: "Angle: ",
                     type: "number",
                     onValueChange: (e) => {
-                        this.setAngle(e.target.value);
+                        this.setAngle(parseFloat(e.target.value));
                     },
                     default: this.angle,
                     id: "rect-angle"

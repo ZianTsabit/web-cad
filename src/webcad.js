@@ -71,7 +71,7 @@ class Webcad {
                     let prevMousePos = { x: e.clientX - this.canvas.offsetLeft, y: this.canvas.height - (e.clientY - this.canvas.offsetTop) };
 
                     const pixels = this.readHitPixel(e.clientX, e.clientY);
-                    console.log(pixels);
+                    //console.log(pixels);
                     this.selectedObjectId = pixels[2];
                     this.render();
                     
@@ -183,11 +183,12 @@ class Webcad {
                     input.setAttribute("type", "number");
                     break;
                 case "checkbox":
-                    input.setAttribute("type", "checkbox")
+                    input.setAttribute("type", "checkbox");
+                    break;
                 }
                 
             input.setAttribute("id", attr.id);
-            if (attr.default) { input.value = attr.default };
+            if (attr.default != null) { input.value = attr.default };
             input.onchange = (e) => {
                 attr.onValueChange(e);
                 this.render();
@@ -222,8 +223,13 @@ class Webcad {
                 count: objectVertices.length/2,
                 mode: object.getDrawingMode()
             };
+            let hre = {
+                ...re,
+                index: hitVertices.length/2
+            }
+
             renderList.push(re);
-            hitRenderList.push(re);
+            hitRenderList.push(hre);
 
             objectVertices.forEach((x) => {
                 hitVertices.push(x);
@@ -233,7 +239,8 @@ class Webcad {
             objectVerticesColors.forEach((x) => {
                 colors.push(x);
             });
-            for (let i = 0; i < re.count; i++) {
+
+            for (let i = 0; i < hre.count; i++) {
                 hitColors.push(0, 0, re.id * 1.0/255, 1);
             }
             // End of each object add to render list
@@ -242,44 +249,29 @@ class Webcad {
             if (this.selectedObjectId == re.id) {
                 
                 if(re.mode == this.gl.LINES) {
-                    
+                    let obv = objectVertices;
                     for (let i = 0; i < objectVertices.length; i +=2) {
-                        let obv = objectVertices;
                         this.drawVerticesIndicator(obv[i], obv[i+1], [1/255, 0, this.selectedObjectId/255, 255], VERTEX_SELECTION_TOLERANCE*2/this.canvas.width, vertices, colors, hitVertices, hitColors, renderList, hitRenderList);
                     }
 
-                    let leftMost = objectVertices[0];
-                    let rightMost = objectVertices[0];
-                    let topMost = objectVertices[1];
-                    let bottomMost = objectVertices[1];
-                    for (let i = 0; i < objectVertices.length; i += 2) {
-                        if (objectVertices[i] < leftMost) {
-                            leftMost = objectVertices[i];
-                        }
-                        if (objectVertices[i] > rightMost) {
-                            rightMost = objectVertices[i];
-                        }
-                        if (objectVertices[i+1] < bottomMost) {
-                            bottomMost = objectVertices[i+1];
-                        }
-                        if (objectVertices[i+1] > topMost) {
-                            topMost = objectVertices[i+1];
-                        }
+                    // Drawing tolerance for line
+                    let hre = {
+                        id: object.id,
+                        index: hitVertices.length/2,
+                        count: 4,
+                        mode: this.gl.TRIANGLE_STRIP
                     }
-
-                    let re = {
-                        id: 0,
-                        index: vertices.length/2,
-                        count: 4*4,
-                        mode: this.gl.LINES
-                    }
-                    renderList.push(re)
-
-                    for (let i = 0; i < re.count; i++) {
-                        colors.push(0, 0, 0, 1)
+                    hitRenderList.push(hre);
+                    const tolerance = VERTEX_SELECTION_TOLERANCE * 2 / this.canvas.width;
+                    hitVertices.push(obv[0] + tolerance, obv[1] + tolerance);
+                    hitVertices.push(obv[0] - tolerance, obv[1] + tolerance);
+                    hitVertices.push(obv[2] + tolerance, obv[3] - tolerance);
+                    hitVertices.push(obv[2] - tolerance, obv[3] - tolerance);
+                    for(let i = 0; i < hre.count; i++) {
+                        hitColors.push(0, 0, hre.id/255, 1);
                     }
                     
-                }else{
+                } else{
 
                     // Draw boundary
                     for (let i = 0; i < objectVertices.length; i +=2) {
@@ -337,7 +329,7 @@ class Webcad {
 
         // Hit canvas
         this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hvBuffer);
-        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(vertices), this.hitGl.STATIC_DRAW);
+        this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(hitVertices), this.hitGl.STATIC_DRAW);
 
         this.hitGl.bindBuffer(this.hitGl.ARRAY_BUFFER, this.hcBuffer);
         this.hitGl.bufferData(this.hitGl.ARRAY_BUFFER, flatten(hitColors), this.hitGl.STATIC_DRAW);;
@@ -443,8 +435,12 @@ class Webcad {
             count: 4,
             mode: this.gl.TRIANGLE_STRIP
         }
+        let hre = {
+            ...re,
+            index: hitVertices.length/2
+        }
         renderList.push(re);
-        hitRenderList.push(re);
+        hitRenderList.push(hre);
 
         const points = [vertexX-size/2, vertexY+size/2, vertexX+size/2, vertexY+size/2, vertexX-size/2, vertexY-size/2, vertexX+size/2, vertexY-size/2];
         vertices.push(...points);

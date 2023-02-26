@@ -239,7 +239,7 @@ class Line extends Shape {
                 label:"Angle: ",
                 type: "number",
                 onValueChange: (e) => { 
-                    this.setAngle(e.target.value); 
+                    this.setAngle(parseFloat(e.target.value)); 
                 },
                 default: this.angle,
                 id: "line-angle"
