@@ -2,6 +2,17 @@
 /// <reference path="../shape.js" />
 
 class Polygon extends Shape {
+    /**
+     * Default number of sides
+     * @type {number}
+     */
+    static defaultSides = 3;
+
+    /**
+     * Polygon sides in integer
+     * @type {number}
+     */
+    sides = Polygon.defaultSides;
     
     /**
      * Position in pixel, origin is lower left
@@ -27,23 +38,13 @@ class Polygon extends Shape {
     angle = 0;
 
     /**
-     * Polygon sides in pixel
-     * @type {number}
-     */
-    sides = document.getElementById('n-polygon').value;
-
-    /**
      * Vertices in pixel, origin is lower left
      * @type {number[]}
      */
-    vertices = [
-        [0,0] * this.sides
-    ];
+    vertices = [];
 
     /** Color of each vertex, in rgba array (0-255) */
-    colors = [
-        [0, 0, 0, 1] * this.sides
-    ];
+    colors = [];
 
     /** Hex string
      * @type {string} */
@@ -56,6 +57,7 @@ class Polygon extends Shape {
      */
     constructor(id, webcad) {
         super(id, webcad, "polygon");
+        this.setSides(Polygon.defaultSides);
         this.setAllVertexColor(Polygon.defaultColor);
     }
 
@@ -101,14 +103,24 @@ class Polygon extends Shape {
     }
 
     setSides(sides) {
-        this.sides = sides;
+        if (sides > this.sides) {   // Add new vertices with default color
+            const colorArr = hexToRgb(Polygon.defaultColor);
+            for (; this.sides < sides; this.sides++) {
+                this.colors.push([colorArr.r, colorArr.g, colorArr.b, 255]);
+            }
+        } else {    // Delete last vertices
+            for (; this.sides > sides; this.sides--) {
+                this.vertices.pop();
+                this.colors.pop();
+            }
+        }
 
         this.recalculateVertices();
     }
 
     setAllVertexColor(hex) {
         const colorArr = hexToRgb(hex);
-        for(let i = 0; i < 2; i++) {
+        for(let i = 0; i < this.sides; i++) {
             this.colors[i] = [colorArr.r, colorArr.g, colorArr.b, 255];
         }
     }
@@ -155,6 +167,20 @@ class Polygon extends Shape {
     getSidebarAttrs() {
         return [
             {
+                label: "Sides: ",
+                type: "number",
+                onValueChange: (e) => {
+                    const sides = parseInt(e.target.value);
+                    if (!sides || sides < 3) {
+                        e.target.value = 3;
+                    } else {
+                        this.setSides(sides);
+                    }
+                },
+                default: this.sides,
+                id: "poly-sides"
+            },
+            {
                 label: "Width: ",
                 type: "number",
                 onValueChange: (e) => {
@@ -194,16 +220,7 @@ class Polygon extends Shape {
                 },
                 default: this.angle,
                 id: "poly-angle"
-            },
-            {
-                label: "Sides: ",
-                type: "number",
-                onValueChange: (e) => {
-                    this.setSides(e.target.value);
-                },
-                default: this.sides,
-                id: "poly-sides"
-            },
+            }
         ];
     }
 
@@ -229,11 +246,24 @@ class Polygon extends Shape {
      * @returns {{label, type, onValueChange}[]}
      */
     static getCreateAttrs() {
-        return [{       
-            label: "Polygon Color: ",
-            type: "color",
-            onValueChange: (e) => { Polygon.setDefaultColor(e.target.value) },
-            default: Polygon.defaultColor
+        return [
+            {
+                label: "Sides: ",
+                type: "number",
+                onValueChange: (e) => {
+                    const sides = parseInt(e.target.value);
+                    if (!sides || sides < 3) {
+                        e.target.value = Polygon.defaultSides;
+                    } else {
+                        Polygon.defaultSides = sides;
+                    }
+                },
+                default: Polygon.defaultSides
+            }, {       
+                label: "Polygon Color: ",
+                type: "color",
+                onValueChange: (e) => { Polygon.setDefaultColor(e.target.value) },
+                default: Polygon.defaultColor
         }];
     }
 
